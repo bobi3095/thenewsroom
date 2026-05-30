@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search — The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="search-page">
+  <div class="search-bar-big">
+    <div class="container">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);margin-bottom:12px">Search</div>
+      <form action="/search" method="GET">
+        <input type="text" name="q" value="<%= q %>" placeholder="Search for stories, topics..." autofocus>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container">
+    <% if (q) { %>
+      <div style="margin-bottom:24px">
+        <span style="font-size:0.9rem;color:var(--muted)">
+          <strong style="color:var(--ink)"><%= results.length %></strong> result<%= results.length !== 1 ? 's' : '' %> for "<strong style="color:var(--ink)"><%= q %></strong>"
+        </span>
+      </div>
+
+      <% if (results.length > 0) { %>
+      <div class="article-list">
+        <% results.forEach(a => { %>
+        <a href="/article/<%= a.slug %>" class="list-article">
+          <div class="list-image">
+            <% if (a.image) { %>
+              <img src="<%= a.image %>" alt="<%= a.title %>">
+            <% } else { %>
+              <div class="list-image-placeholder">📰</div>
+            <% } %>
+          </div>
+          <div class="list-content">
+            <div class="list-category"><%= a.category %></div>
+            <div class="list-title"><%= a.title %></div>
+            <% if (a.excerpt) { %><p style="font-size:0.82rem;color:#888;margin-top:4px"><%= a.excerpt.substring(0,140) %>...</p><% } %>
+            <div class="list-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %></div>
+          </div>
+        </a>
+        <% }) %>
+      </div>
+      <% } else { %>
+      <div class="empty-state">
+        <div class="icon">🔍</div>
+        <h3>No results found</h3>
+        <p>Try different keywords or browse our sections below.</p>
+        <div style="margin-top:20px">
+          <% categories.forEach(cat => { %>
+          <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" class="tag"><%= cat %></a>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    <% } else { %>
+    <div style="text-align:center;padding:40px 0">
+      <p style="color:var(--muted);margin-bottom:20px">Browse by section:</p>
+      <% categories.forEach(cat => { %>
+      <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" class="tag" style="font-size:0.85rem;padding:8px 16px"><%= cat %></a>
+      <% }) %>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="wordmark">The News Room</div>
+        <p>Independent journalism covering the stories that matter — and the ones mainstream media won't touch. Politics, Technology, Sports, World News and beyond.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Sections</h4>
+        <% categories.forEach(cat => { %>
+        <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>"><%= cat %></a>
+        <% }) %>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <a href="#">Our Mission</a>
+        <a href="#">Editorial Policy</a>
+        <a href="#">Contact Us</a>
+        <a href="#">Tip Line</a>
+      </div>
+      <div class="footer-col">
+        <h4>Follow</h4>
+        <a href="#">Twitter / X</a>
+        <a href="#">Telegram</a>
+        <a href="#">Newsletter</a>
+        <a href="/admin" style="margin-top:12px;color:rgba(255,255,255,0.2);font-size:0.7rem">Admin</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© <%= new Date().getFullYear() %> <span class="footer-accent">The News Room</span>. All rights reserved.</span>
+      <span>Independent. Unfiltered. Uncompromised.</span>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= article ? 'Edit Article' : 'New Article' %> — The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    #content-editor h2 { font-family: 'Playfair Display',serif; font-size:1.5rem; font-weight:700; margin:1em 0 0.5em; }
+    #content-editor h3 { font-family: 'Playfair Display',serif; font-size:1.2rem; font-weight:600; margin:1em 0 0.5em; }
+    #content-editor blockquote { border-left:3px solid #c8102e; padding:10px 16px; margin:1em 0; background:#fff5f5; }
+    #content-editor a { color:#c8102e; text-decoration:underline; }
+    #content-editor ul, #content-editor ol { margin:0.8em 0 0.8em 1.5em; }
+    #content-editor li { margin-bottom:4px; }
+    #content-editor p { margin-bottom:1em; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: article ? 'edit-article' : 'new-article', categories }) %>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title"><%= article ? 'Edit Article' : 'Write New Article' %></div>
+      <div class="topbar-actions">
+        <a href="/admin" class="btn btn-outline btn-sm">← Back</a>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <form method="POST" action="/admin/articles/save" enctype="multipart/form-data" id="article-form">
+        <% if (article) { %>
+          <input type="hidden" name="id" value="<%= article.id %>">
+        <% } %>
+        <input type="hidden" name="content" id="content-hidden">
+
+        <div class="editor-layout">
+          <!-- Main Editor -->
+          <div>
+            <!-- Title -->
+            <div style="background:var(--white);border:1px solid var(--border);margin-bottom:2px">
+              <input
+                type="text"
+                name="title"
+                class="form-control-lg"
+                placeholder="Article headline..."
+                value="<%= article ? article.title : '' %>"
+                required
+              >
+            </div>
+
+            <!-- Excerpt -->
+            <div style="background:var(--white);border:1px solid var(--border);border-top:none;margin-bottom:16px">
+              <textarea
+                name="excerpt"
+                class="form-control"
+                placeholder="Brief summary or deck (shown on homepage and article page)..."
+                style="border:none;border-bottom:1px solid var(--border);resize:none;min-height:60px;padding:12px 16px"
+              ><%= article ? article.excerpt : '' %></textarea>
+            </div>
+
+            <!-- Rich Text Editor -->
+            <div style="margin-bottom:16px">
+              <div class="editor-toolbar">
+                <button type="button" class="toolbar-btn" onclick="fmt('bold')" title="Bold"><b>B</b></button>
+                <button type="button" class="toolbar-btn" onclick="fmt('italic')" title="Italic"><i>I</i></button>
+                <button type="button" class="toolbar-btn" onclick="fmt('underline')" title="Underline"><u>U</u></button>
+                <div class="toolbar-sep"></div>
+                <button type="button" class="toolbar-btn" onclick="fmtBlock('h2')" title="Heading 2">H2</button>
+                <button type="button" class="toolbar-btn" onclick="fmtBlock('h3')" title="Heading 3">H3</button>
+                <button type="button" class="toolbar-btn" onclick="fmtBlock('p')" title="Paragraph">¶</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" class="toolbar-btn" onclick="fmt('insertUnorderedList')" title="Bullet List">• List</button>
+                <button type="button" class="toolbar-btn" onclick="fmt('insertOrderedList')" title="Numbered List">1. List</button>
+                <button type="button" class="toolbar-btn" onclick="fmtBlock('blockquote')" title="Quote">❝</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" class="toolbar-btn" onclick="insertLink()" title="Link">🔗</button>
+                <button type="button" class="toolbar-btn" onclick="insertImage()" title="Insert Image">🖼</button>
+                <div class="toolbar-sep"></div>
+                <button type="button" class="toolbar-btn" onclick="fmt('undo')">↩</button>
+                <button type="button" class="toolbar-btn" onclick="fmt('redo')">↪</button>
+              </div>
+              <div
+                id="content-editor"
+                contenteditable="true"
+                data-placeholder="Write your article here..."
+              ><%- article ? article.content : '' %></div>
+            </div>
+          </div>
+
+          <!-- Sidebar Panel -->
+          <div class="editor-panel">
+            <!-- Publish -->
+            <div class="panel-section">
+              <div class="panel-title">Publish</div>
+              <button type="submit" name="status" value="published" class="publish-btn" onclick="prepareSubmit()">
+                🚀 Publish Now
+              </button>
+              <button type="submit" name="status" value="draft" class="draft-btn" onclick="prepareSubmit()">
+                Save as Draft
+              </button>
+            </div>
+
+            <!-- Category -->
+            <div class="panel-section">
+              <div class="panel-title">Category</div>
+              <select name="category" class="form-control" required>
+                <option value="">Select category...</option>
+                <% categories.forEach(cat => { %>
+                <option value="<%= cat %>" <%= article && article.category === cat ? 'selected' : '' %>>
+                  <%= cat %>
+                </option>
+                <% }) %>
+              </select>
+            </div>
+
+            <!-- Options -->
+            <div class="panel-section">
+              <div class="panel-title">Options</div>
+              <div class="toggle-row">
+                <span class="toggle-label">Featured Article</span>
+                <label class="toggle">
+                  <input type="checkbox" name="featured" <%= article && article.featured ? 'checked' : '' %>>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Cover Image -->
+            <div class="panel-section">
+              <div class="panel-title">Cover Image</div>
+              <div id="image-upload-area" class="image-upload-area" onclick="document.getElementById('image-input').click()">
+                <div class="upload-icon">🖼</div>
+                <p>Click to upload cover image</p>
+                <p style="font-size:0.68rem;margin-top:4px;opacity:0.6">JPG, PNG up to 5MB</p>
+              </div>
+              <div class="image-preview" id="image-preview" style="display:none">
+                <img id="preview-img" src="" alt="Cover">
+                <button type="button" class="remove-image" onclick="removeImage()">✕ Remove</button>
+              </div>
+              <input type="file" id="image-input" name="image" accept="image/*" style="display:none" onchange="previewImage(this)">
+              <% if (article && article.image) { %>
+              <div id="current-image-info" style="margin-top:8px;font-size:0.72rem;color:var(--muted)">
+                Current: <a href="<%= article.image %>" target="_blank" style="color:var(--accent)">View image</a>
+              </div>
+              <% } %>
+            </div>
+
+            <!-- Article Info -->
+            <% if (article) { %>
+            <div class="panel-section">
+              <div class="panel-title">Info</div>
+              <div style="font-size:0.75rem;color:var(--muted);line-height:1.8">
+                <div>Created: <%= new Date(article.createdAt).toLocaleDateString() %></div>
+                <div>Views: <%= article.views || 0 %></div>
+                <div>Status: <span class="badge <%= article.status === 'published' ? 'badge-green' : 'badge-yellow' %>"><%= article.status %></span></div>
+                <% if (article.status === 'published') { %>
+                <div style="margin-top:8px">
+                  <a href="/article/<%= article.slug %>" target="_blank" style="color:var(--accent);font-size:0.75rem">View live article →</a>
+                </div>
+                <% } %>
+              </div>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Sync contenteditable to hidden input before submit
+function prepareSubmit() {
+  document.getElementById('content-hidden').value = document.getElementById('content-editor').innerHTML;
+}
+
+// Also sync on any form submit
+document.getElementById('article-form').addEventListener('submit', prepareSubmit);
+
+// Formatting commands
+function fmt(cmd) {
+  document.getElementById('content-editor').focus();
+  document.execCommand(cmd, false, null);
+}
+
+function fmtBlock(tag) {
+  document.getElementById('content-editor').focus();
+  document.execCommand('formatBlock', false, tag);
+}
+
+function insertLink() {
+  const url = prompt('Enter URL:');
+  if (url) {
+    document.getElementById('content-editor').focus();
+    document.execCommand('createLink', false, url);
+  }
+}
+
+function insertImage() {
+  const url = prompt('Enter image URL:');
+  if (url) {
+    document.getElementById('content-editor').focus();
+    document.execCommand('insertImage', false, url);
+  }
+}
+
+// Image preview
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('preview-img').src = e.target.result;
+      document.getElementById('image-preview').style.display = 'block';
+      document.getElementById('image-upload-area').style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function removeImage() {
+  document.getElementById('image-input').value = '';
+  document.getElementById('image-preview').style.display = 'none';
+  document.getElementById('image-upload-area').style.display = 'block';
+}
+
+// Keyboard shortcuts
+document.getElementById('content-editor').addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case 'b': e.preventDefault(); fmt('bold'); break;
+      case 'i': e.preventDefault(); fmt('italic'); break;
+      case 'u': e.preventDefault(); fmt('underline'); break;
+    }
+  }
+});
+
+// Auto-save to localStorage
+const SAVE_KEY = 'thenewsroom_draft_<%= article ? article.id : "new" %>';
+
+function autoSave() {
+  const title = document.querySelector('[name="title"]').value;
+  const content = document.getElementById('content-editor').innerHTML;
+  const excerpt = document.querySelector('[name="excerpt"]').value;
+  localStorage.setItem(SAVE_KEY, JSON.stringify({ title, content, excerpt, savedAt: new Date().toISOString() }));
+}
+
+setInterval(autoSave, 30000); // Auto-save every 30s
+
+// Restore autosave for new articles
+<% if (!article) { %>
+const saved = localStorage.getItem(SAVE_KEY);
+if (saved) {
+  try {
+    const data = JSON.parse(saved);
+    const restore = confirm(`Restore autosaved draft from ${new Date(data.savedAt).toLocaleTimeString()}?`);
+    if (restore) {
+      if (data.title) document.querySelector('[name="title"]').value = data.title;
+      if (data.content) document.getElementById('content-editor').innerHTML = data.content;
+      if (data.excerpt) document.querySelector('[name="excerpt"]').value = data.excerpt;
+    }
+  } catch(e) {}
+}
+<% } %>
+</script>
+</body>
+</html>

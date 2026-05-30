@@ -1,0 +1,28 @@
+<header class="site-header">
+  <div class="header-top">
+    <a href="/" class="site-logo">
+      <div>
+        <div class="wordmark">The News Room</div>
+        <div class="tagline">Independent Journalism</div>
+      </div>
+    </a>
+    <div class="header-search">
+      <form action="/search" method="GET">
+        <input type="text" name="q" placeholder="Search stories..." autocomplete="off">
+        <button type="submit">⌕</button>
+      </form>
+    </div>
+    <div class="header-date" id="header-date"></div>
+  </div>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="/" class="<%= page === 'home' ? 'active' : '' %>">Home</a>
+      <% categories.forEach(cat => { %>
+      <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>"><%= cat %></a>
+      <% }) %>
+    </div>
+  </nav>
+</header>
+<script>
+  document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+</script>

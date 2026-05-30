@@ -1,0 +1,37 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "$2b$10$c.qkECOxuUW9N4t7VJkYYef24Tq/IcUy3pHKHk.Nw.C/sW1.Oiece",
+      "name": "Admin",
+      "role": "admin",
+      "createdAt": "2026-05-30T05:46:04.850Z"
+    }
+  ],
+  "articles": [
+    {
+      "id": 1,
+      "title": "Welcome to The News Room",
+      "slug": "welcome-to-the-news-room",
+      "category": "World News",
+      "excerpt": "Independent journalism that goes beyond the headlines. We cover the stories that matter.",
+      "content": "<p>Welcome to <strong>The News Room</strong> — a new kind of news platform. We believe in honest, independent reporting without the noise of mainstream agendas.</p><p>Our mission is simple: cover the truth, wherever it leads. From politics and technology to sports and stories the mainstream media won't touch — we're here for all of it.</p><p>Stay tuned. The real news starts here.</p>",
+      "author": "Admin",
+      "authorId": 1,
+      "status": "published",
+      "featured": true,
+      "image": "",
+      "views": 0,
+      "createdAt": "2026-05-30T05:46:04.854Z",
+      "updatedAt": "2026-05-30T05:46:04.854Z"
+    }
+  ],
+  "categories": [
+    "Politics",
+    "Technology",
+    "Sports",
+    "World News",
+    "Uncovered"
+  ]
+}

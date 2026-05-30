@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The News Room — Independent Journalism</title>
+  <meta name="description" content="The News Room: Independent journalism covering Politics, Technology, Sports, World News and the stories mainstream media won't touch.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main>
+  <!-- BREAKING BAR -->
+  <% if (latest.length > 0) { %>
+  <div class="breaking-bar">
+    <span class="breaking-label">Latest</span>
+    <div class="ticker-wrap">
+      <div class="ticker-items">
+        <% for(let i = 0; i < Math.min(latest.length, 5); i++) { %>
+        <span><a href="/article/<%= latest[i].slug %>" style="color:white"><%= latest[i].title %></a></span>
+        <% } %>
+        <% for(let i = 0; i < Math.min(latest.length, 5); i++) { %>
+        <span><a href="/article/<%= latest[i].slug %>" style="color:white"><%= latest[i].title %></a></span>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- HERO -->
+  <% if (featured) { %>
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-grid">
+        <!-- Featured Article -->
+        <div class="hero-main">
+          <a href="/article/<%= featured.slug %>">
+            <div class="hero-image">
+              <% if (featured.image) { %>
+                <img src="<%= featured.image %>" alt="<%= featured.title %>">
+              <% } else { %>
+                <div class="hero-image-placeholder">🗞</div>
+              <% } %>
+            </div>
+            <div class="hero-content">
+              <div class="hero-category"><%= featured.category %></div>
+              <h1 class="hero-title"><%= featured.title %></h1>
+              <% if (featured.excerpt) { %>
+                <p class="hero-excerpt"><%= featured.excerpt %></p>
+              <% } %>
+              <div class="hero-meta">
+                By <%= featured.author %> &nbsp;·&nbsp;
+                <%= new Date(featured.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Sidebar Stories -->
+        <div class="hero-sidebar">
+          <% const sidebarItems = latest.slice(0, 4); %>
+          <% sidebarItems.forEach(a => { %>
+          <a href="/article/<%= a.slug %>" class="sidebar-article">
+            <div class="sidebar-category"><%= a.category %></div>
+            <div class="sidebar-title"><%= a.title %></div>
+            <div class="sidebar-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) %></div>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <!-- LATEST NEWS GRID -->
+  <% if (latest.length > 4) { %>
+  <section class="article-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Latest Stories</h2>
+        <a href="/search" class="section-link">All Articles →</a>
+      </div>
+      <div class="article-grid">
+        <% latest.slice(4, 8).forEach(a => { %>
+        <a href="/article/<%= a.slug %>" class="article-card">
+          <div class="card-image">
+            <% if (a.image) { %>
+              <img src="<%= a.image %>" alt="<%= a.title %>">
+            <% } else { %>
+              <div class="card-image-placeholder">📰</div>
+            <% } %>
+          </div>
+          <div class="card-content">
+            <div class="card-category"><%= a.category %></div>
+            <div class="card-title"><%= a.title %></div>
+            <div class="card-meta">
+              <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %>
+              <% if (a.views) { %> · <%= a.views %> views<% } %>
+            </div>
+          </div>
+        </a>
+        <% }) %>
+      </div>
+    </div>
+  </section>
+  <% } %>
+
+  <!-- CATEGORY SECTIONS -->
+  <% categories.forEach(cat => { %>
+    <% if (byCategory[cat] && byCategory[cat].length > 0) { %>
+    <section class="article-section" style="padding-top: 0">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title"><%= cat %></h2>
+          <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" class="section-link">More <%= cat %> →</a>
+        </div>
+        <div class="article-list">
+          <% byCategory[cat].forEach(a => { %>
+          <a href="/article/<%= a.slug %>" class="list-article">
+            <div class="list-image">
+              <% if (a.image) { %>
+                <img src="<%= a.image %>" alt="<%= a.title %>">
+              <% } else { %>
+                <div class="list-image-placeholder">📰</div>
+              <% } %>
+            </div>
+            <div class="list-content">
+              <div class="list-category"><%= a.category %></div>
+              <div class="list-title"><%= a.title %></div>
+              <% if (a.excerpt) { %><p style="font-size:0.82rem;color:#888;margin-top:4px;line-height:1.5"><%= a.excerpt.substring(0,120) %><% if(a.excerpt.length>120) { %>...<% } %></p><% } %>
+              <div class="list-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %></div>
+            </div>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+    </section>
+    <% } %>
+  <% }) %>
+
+  <!-- EMPTY STATE -->
+  <% if (articles.length === 0) { %>
+  <div class="container">
+    <div class="empty-state">
+      <div class="icon">📰</div>
+      <h3>No Articles Yet</h3>
+      <p>Head to the <a href="/admin" style="color:var(--accent)">admin panel</a> to publish your first article.</p>
+    </div>
+  </div>
+  <% } %>
+
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

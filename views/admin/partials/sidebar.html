@@ -1,0 +1,30 @@
+<aside class="admin-sidebar">
+  <div class="sidebar-logo">
+    <div class="name">The News Room</div>
+    <div class="role">Admin Panel</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Content</div>
+    <a href="/admin" class="<%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+      <span class="icon">⬛</span> <span>Dashboard</span>
+    </a>
+    <a href="/admin/articles/new" class="<%= typeof activePage !== 'undefined' && activePage === 'new-article' ? 'active' : '' %>">
+      <span class="icon">✏️</span> <span>New Article</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px">Sections</div>
+    <% categories.forEach(cat => { %>
+    <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" target="_blank">
+      <span class="icon">→</span> <span><%= cat %></span>
+    </a>
+    <% }) %>
+  </nav>
+  <div class="sidebar-bottom">
+    <a href="/" target="_blank">
+      <span>🌐</span> <span>View Site</span>
+    </a>
+    <a href="/admin/logout" style="margin-top:10px;color:rgba(255,0,0,0.5)">
+      <span>⇥</span> <span>Logout</span>
+    </a>
+  </div>
+</aside>

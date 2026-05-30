@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: 'dashboard', categories }) %>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-actions">
+        <span style="font-size:0.78rem;color:var(--muted)">Welcome, <%= user.name %></span>
+        <a href="/admin/articles/new" class="btn btn-accent">+ New Article</a>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Articles</div>
+          <div class="stat-value"><%= stats.total %></div>
+          <div class="stat-icon">📰</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Published</div>
+          <div class="stat-value"><%= stats.published %></div>
+          <div class="stat-icon">✅</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Drafts</div>
+          <div class="stat-value"><%= stats.drafts %></div>
+          <div class="stat-icon">📝</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Views</div>
+          <div class="stat-value"><%= stats.totalViews.toLocaleString() %></div>
+          <div class="stat-icon">👁</div>
+        </div>
+      </div>
+
+      <!-- Articles Table -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-title">All Articles</div>
+          <a href="/admin/articles/new" class="btn btn-primary btn-sm">+ Write New</a>
+        </div>
+        <% if (articles.length > 0) { %>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Views</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% articles.forEach(a => { %>
+            <tr>
+              <td>
+                <div class="article-title-cell">
+                  <%= a.title %>
+                  <small>/<%= a.slug %></small>
+                </div>
+              </td>
+              <td><span class="badge badge-gray"><%= a.category %></span></td>
+              <td>
+                <% if (a.status === 'published') { %>
+                  <span class="badge badge-green">Published</span>
+                <% } else { %>
+                  <span class="badge badge-yellow">Draft</span>
+                <% } %>
+                <% if (a.featured) { %> <span class="badge badge-red">Featured</span><% } %>
+              </td>
+              <td style="color:var(--muted)"><%= a.views || 0 %></td>
+              <td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">
+                <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+              </td>
+              <td>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <a href="/admin/articles/edit/<%= a.id %>" class="btn btn-icon btn-sm">Edit</a>
+                  <% if (a.status === 'published') { %>
+                  <a href="/article/<%= a.slug %>" target="_blank" class="btn btn-outline btn-sm">View</a>
+                  <% } %>
+                  <form method="POST" action="/admin/articles/delete/<%= a.id %>" onsubmit="return confirm('Delete this article?')" style="display:inline">
+                    <button type="submit" class="btn btn-danger btn-sm">Del</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } else { %>
+        <div style="padding:48px;text-align:center;color:var(--muted)">
+          <div style="font-size:2rem;margin-bottom:12px">📝</div>
+          <p>No articles yet. <a href="/admin/articles/new" style="color:var(--accent)">Write your first article</a></p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

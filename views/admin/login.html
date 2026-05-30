@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login — The News Room</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-box">
+    <div class="login-logo">The News Room</div>
+    <div class="login-sub">Admin Panel</div>
+    <div class="login-divider"></div>
+
+    <% if (error) { %>
+    <div class="error-msg"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/admin/login">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" required autocomplete="username" autofocus>
+      </div>
+      <div class="form-group" style="margin-bottom:24px">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="publish-btn">Sign In</button>
+    </form>
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+      <a href="/" style="font-size:0.75rem;color:var(--muted);transition:color 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← View Website</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

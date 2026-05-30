@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= article.title %> — The News Room</title>
+  <meta name="description" content="<%= article.excerpt || '' %>">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main class="article-page">
+  <div class="article-page-grid">
+    <!-- Article Content -->
+    <article>
+      <header class="article-header">
+        <span class="article-category-badge"><%= article.category %></span>
+        <h1 class="article-headline"><%= article.title %></h1>
+        <% if (article.excerpt) { %>
+          <p class="article-deck"><%= article.excerpt %></p>
+        <% } %>
+        <div class="article-byline">
+          <span class="byline-name">By <%= article.author %></span>
+          <span class="byline-dot">·</span>
+          <span class="byline-date">
+            <%= new Date(article.createdAt).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}) %>
+          </span>
+          <% if (article.views > 0) { %>
+          <span class="byline-dot">·</span>
+          <span class="byline-date"><%= article.views %> views</span>
+          <% } %>
+        </div>
+      </header>
+
+      <% if (article.image) { %>
+      <div class="article-cover">
+        <img src="<%= article.image %>" alt="<%= article.title %>">
+      </div>
+      <% } %>
+
+      <div class="article-body">
+        <%- article.content %>
+      </div>
+
+      <!-- Tags -->
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+        <span class="tag"><%= article.category %></span>
+        <span class="tag">The News Room</span>
+      </div>
+
+      <!-- Share -->
+      <div style="margin-top:24px;display:flex;gap:10px;align-items:center">
+        <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Share:</span>
+        <button onclick="shareArticle('twitter')" class="btn btn-outline btn-sm">Twitter</button>
+        <button onclick="shareArticle('copy')" class="btn btn-outline btn-sm" id="copy-btn">Copy Link</button>
+      </div>
+    </article>
+
+    <!-- Sidebar -->
+    <aside>
+      <!-- Related Articles -->
+      <% if (related.length > 0) { %>
+      <div class="sidebar-widget">
+        <div class="widget-title">Related Stories</div>
+        <% related.forEach(r => { %>
+        <a href="/article/<%= r.slug %>" style="display:block;padding:14px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);margin-bottom:5px"><%= r.category %></div>
+          <div style="font-family:var(--serif);font-size:0.92rem;font-weight:600;line-height:1.3;color:var(--ink);transition:color 0.2s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'"><%= r.title %></div>
+          <div style="font-size:0.68rem;color:var(--muted);margin-top:5px"><%= new Date(r.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></div>
+        </a>
+        <% }) %>
+      </div>
+      <% } %>
+
+      <!-- About Widget -->
+      <div class="sidebar-widget">
+        <div class="widget-title">About Us</div>
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.65">
+          The News Room is dedicated to independent journalism — covering the stories that matter, without fear or favour. We go where the news leads.
+        </p>
+      </div>
+
+      <!-- Categories Widget -->
+      <div class="sidebar-widget">
+        <div class="widget-title">Browse</div>
+        <% categories.forEach(cat => { %>
+        <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" class="tag"><%= cat %></a>
+        <% }) %>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer.html') %>
+
+<script>
+function shareArticle(platform) {
+  const url = window.location.href;
+  const title = '<%= article.title.replace(/'/g, "\\'") %>';
+  if (platform === 'twitter') {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Link', 2000);
+    });
+  }
+}
+</script>
+<script src="/js/main.js"></script>
+</body>
+</html>

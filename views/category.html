@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= category %> — The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('partials/header.html') %>
+
+<main>
+  <div class="category-header">
+    <div class="container">
+      <div class="category-label">Section</div>
+      <h1 class="category-name"><%= category %></h1>
+    </div>
+  </div>
+
+  <div class="container" style="padding-bottom:60px">
+    <% if (articles.length > 0) { %>
+    <div class="category-grid">
+      <% articles.forEach(a => { %>
+      <a href="/article/<%= a.slug %>" class="article-card">
+        <div class="card-image">
+          <% if (a.image) { %>
+            <img src="<%= a.image %>" alt="<%= a.title %>">
+          <% } else { %>
+            <div class="card-image-placeholder">📰</div>
+          <% } %>
+        </div>
+        <div class="card-content">
+          <div class="card-category"><%= a.category %></div>
+          <div class="card-title"><%= a.title %></div>
+          <% if (a.excerpt) { %><p style="font-size:0.8rem;color:var(--muted);line-height:1.5;margin-bottom:10px"><%= a.excerpt.substring(0,100) %>...</p><% } %>
+          <div class="card-meta">
+            <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %>
+          </div>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <div class="empty-state">
+      <div class="icon">📰</div>
+      <h3>No articles in <%= category %> yet</h3>
+      <p>Check back soon — stories are coming.</p>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>
