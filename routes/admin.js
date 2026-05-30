@@ -28,7 +28,12 @@ router.post('/login', (req, res) => {
   const { username, password } = req.body;
   db.read();
   const user = db.data.users.find(u => u.username === username);
-  if (!user || !bcrypt.compareSync(password, user.password)) {
+  if (!user) {
+    return res.render('admin/login', { error: 'Invalid username or password' });
+  }
+  // If ADMIN_PASSWORD_HASH is set in environment, use that instead of db hash
+  const hashToCheck = process.env.ADMIN_PASSWORD_HASH || user.password;
+  if (!bcrypt.compareSync(password, hashToCheck)) {
     return res.render('admin/login', { error: 'Invalid username or password' });
   }
   const token = jwt.sign({ id: user.id, username: user.username, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
@@ -96,8 +101,8 @@ router.post('/articles/save', authMiddleware, upload.single('image'), (req, res)
       status: status || 'draft',
       featured: featured === 'on',
       slug: slugify(title),
-      author: 'Admin',
-      authorId: 1,
+      author: req.user.name,
+      authorId: req.user.id,
       image: req.file ? `/uploads/${req.file.filename}` : '',
       views: 0,
       createdAt: new Date().toISOString(),
