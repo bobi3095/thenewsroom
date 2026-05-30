@@ -4,18 +4,18 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const db = require('../db');
-const { authMiddleware, apiAuth, JWT_SECRET } = require('../middleware/auth');
+const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
 
-// Multer for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, '../public/uploads')),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Login page
+const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+// Login
 router.get('/login', (req, res) => {
   const token = req.cookies?.token;
   if (token) {
@@ -24,14 +24,10 @@ router.get('/login', (req, res) => {
   res.render('admin/login', { error: null });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  db.read();
-  const user = db.data.users.find(u => u.username === username);
-  if (!user) {
-    return res.render('admin/login', { error: 'Invalid username or password' });
-  }
-  // If ADMIN_PASSWORD_HASH is set in environment, use that instead of db hash
+  const user = await db.getUser(username);
+  if (!user) return res.render('admin/login', { error: 'Invalid username or password' });
   const hashToCheck = process.env.ADMIN_PASSWORD_HASH || user.password;
   if (!bcrypt.compareSync(password, hashToCheck)) {
     return res.render('admin/login', { error: 'Invalid username or password' });
@@ -47,81 +43,66 @@ router.get('/logout', (req, res) => {
 });
 
 // Dashboard
-router.get('/', authMiddleware, (req, res) => {
-  db.read();
-  const articles = db.data.articles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+router.get('/', authMiddleware, async (req, res) => {
+  const articles = await db.getArticles({});
   const published = articles.filter(a => a.status === 'published').length;
   const drafts = articles.filter(a => a.status === 'draft').length;
   const totalViews = articles.reduce((s, a) => s + (a.views || 0), 0);
   res.render('admin/dashboard', {
-    user: req.user, articles: articles.slice(0, 10),
+    user: req.user,
+    articles: articles.slice(0, 20),
     stats: { total: articles.length, published, drafts, totalViews },
-    categories: db.data.categories
+    categories: db.categories
   });
 });
 
 // New article
 router.get('/articles/new', authMiddleware, (req, res) => {
-  res.render('admin/editor', { article: null, categories: db.data.categories, user: req.user });
+  res.render('admin/editor', { article: null, categories: db.categories, user: req.user });
 });
 
 // Edit article
-router.get('/articles/edit/:id', authMiddleware, (req, res) => {
-  db.read();
-  const article = db.data.articles.find(a => a.id === parseInt(req.params.id));
+router.get('/articles/edit/:id', authMiddleware, async (req, res) => {
+  const article = await db.getArticle({ id: parseInt(req.params.id) });
   if (!article) return res.redirect('/admin');
-  res.render('admin/editor', { article, categories: db.data.categories, user: req.user });
+  res.render('admin/editor', { article, categories: db.categories, user: req.user });
 });
 
-// Save article (create/update)
-router.post('/articles/save', authMiddleware, upload.single('image'), (req, res) => {
-  db.read();
+// Save article
+router.post('/articles/save', authMiddleware, upload.single('image'), async (req, res) => {
   const { id, title, content, excerpt, category, status, featured } = req.body;
-  const slugify = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const imageVal = req.file ? `/uploads/${req.file.filename}` : (req.body.existingImage || '');
 
   if (id) {
-    // Update
-    const idx = db.data.articles.findIndex(a => a.id === parseInt(id));
-    if (idx !== -1) {
-      db.data.articles[idx] = {
-        ...db.data.articles[idx],
-        title, content, excerpt, category,
-        status: status || 'draft',
-        featured: featured === 'on',
-        slug: slugify(title),
-        image: req.file ? `/uploads/${req.file.filename}` : db.data.articles[idx].image,
-        updatedAt: new Date().toISOString()
-      };
-    }
+    const existing = await db.getArticle({ id: parseInt(id) });
+    await db.updateArticle(parseInt(id), {
+      title, content, excerpt, category,
+      status: status || 'draft',
+      featured: featured === 'on',
+      slug: slugify(title),
+      image: req.file ? `/uploads/${req.file.filename}` : existing?.image || ''
+    });
   } else {
-    // Create
-    const newId = Math.max(0, ...db.data.articles.map(a => a.id)) + 1;
-    db.data.articles.push({
-      id: newId, title, content, excerpt, category,
+    await db.createArticle({
+      title, content, excerpt, category,
       status: status || 'draft',
       featured: featured === 'on',
       slug: slugify(title),
       author: req.user.name,
       authorId: req.user.id,
-      image: req.file ? `/uploads/${req.file.filename}` : '',
-      views: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      image: imageVal
     });
   }
-  db.write();
   res.redirect('/admin');
 });
 
 // Delete article
-router.post('/articles/delete/:id', authMiddleware, (req, res) => {
-  db.read();
-  db.data.articles = db.data.articles.filter(a => a.id !== parseInt(req.params.id));
-  db.write();
+router.post('/articles/delete/:id', authMiddleware, async (req, res) => {
+  await db.deleteArticle(parseInt(req.params.id));
   res.redirect('/admin');
 });
 
-// Upload image via editor
+// Image upload
 router.post('/upload-image', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
   res.json({ url: `/uploads/${req.file.filename}` });
