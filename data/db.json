@@ -2,11 +2,11 @@
   "users": [
     {
       "id": 1,
-      "username": "bobi3095",
-      "password": "$2b$10$o88yEmZnqZeJNald7XjsdOnUzsvmSAVyoZl3fXFt8sNQJv6WmWQf2",
+      "username": "admin",
+      "password": "$2b$10$T2aKCvorYGKfguqVP4x3K.VmpcDmpaK4sxWa4jimNPXGQIcaKg/Ny",
       "name": "Admin",
       "role": "admin",
-      "createdAt": "2026-05-30T05:46:04.850Z"
+      "createdAt": "2026-05-30T04:46:29.005Z"
     }
   ],
   "articles": [
@@ -22,9 +22,9 @@
       "status": "published",
       "featured": true,
       "image": "",
-      "views": 0,
-      "createdAt": "2026-05-30T05:46:04.854Z",
-      "updatedAt": "2026-05-30T05:46:04.854Z"
+      "views": 1,
+      "createdAt": "2026-05-30T04:46:29.006Z",
+      "updatedAt": "2026-05-30T04:46:29.006Z"
     }
   ],
   "categories": [
