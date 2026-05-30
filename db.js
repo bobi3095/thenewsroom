@@ -17,7 +17,7 @@ db.read();
 if (!db.data.users || db.data.users.length === 0) {
   const hash = bcrypt.hashSync('admin123', 10);
   db.data.users = [{
-    id: 1,
+    id: 1,  
     username: 'admin',
     password: hash,
     name: 'Admin',
