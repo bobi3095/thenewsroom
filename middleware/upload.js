@@ -44,11 +44,14 @@ if (useCloudinary) {
 }
 
 // Helper to get the URL from an uploaded file
-// Cloudinary returns req.file.path, local returns /uploads/filename
 function getFileUrl(file) {
   if (!file) return null;
-  if (useCloudinary) return file.path; // Cloudinary gives full https:// URL
-  return `/uploads/${file.filename}`;  // Local
+  if (useCloudinary) {
+    // Log file object so we can debug what Cloudinary returns
+    console.log('Cloudinary file object:', JSON.stringify(file));
+    return file.secure_url || file.path || file.url || null;
+  }
+  return '/uploads/' + file.filename; // Local
 }
 
 module.exports = { upload, getFileUrl };
