@@ -13,6 +13,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.4.6",
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -22,6 +23,7 @@
     "lowdb": "^7.0.1",
     "marked": "^18.0.4",
     "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.21.0",
     "slugify": "^1.6.9"
   }
