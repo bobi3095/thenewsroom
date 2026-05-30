@@ -2,16 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const multer = require('multer');
-const path = require('path');
+
+
 const db = require('../db');
 const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '../public/uploads')),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const { upload, getFileUrl } = require('../middleware/upload');
 const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 // ── AUTH ──────────────────────────────────────────────────────────
@@ -74,7 +70,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), async (req
       status: status || 'draft',
       featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
       slug: slugify(title),
-      image: req.file ? `/uploads/${req.file.filename}` : existing?.image || ''
+      image: getFileUrl(req.file) || existing?.image || ''
     });
   } else {
     await db.createArticle({
@@ -84,7 +80,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), async (req
       slug: slugify(title),
       author: req.user.name,
       authorId: req.user.id,
-      image: req.file ? `/uploads/${req.file.filename}` : ''
+      image: getFileUrl(req.file) || ''
     });
   }
   res.redirect('/admin');
@@ -117,7 +113,7 @@ router.post('/authors/create', authMiddleware, adminOnly, upload.single('avatar'
   const hash = bcrypt.hashSync(password, 10);
   await db.createUser({
     username, name, password: hash, role: 'author', bio: bio || '',
-    avatar: req.file ? `/uploads/${req.file.filename}` : ''
+    avatar: getFileUrl(req.file) || ''
   });
   res.redirect('/admin/authors');
 });
@@ -132,7 +128,7 @@ router.post('/authors/update/:id', authMiddleware, adminOnly, upload.single('ava
   const { name, bio, password } = req.body;
   const id = parseInt(req.params.id);
   const updates = { name, bio: bio||'' };
-  if (req.file) updates.avatar = `/uploads/${req.file.filename}`;
+  if (req.file) updates.avatar = getFileUrl(req.file);
   if (password && password.trim()) updates.password = bcrypt.hashSync(password, 10);
   await db.updateUser(id, updates);
   res.redirect('/admin/authors');
@@ -152,7 +148,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 router.post('/profile/update', authMiddleware, upload.single('avatar'), async (req, res) => {
   const { name, bio, password, confirmPassword } = req.body;
   const updates = { name, bio: bio||'' };
-  if (req.file) updates.avatar = `/uploads/${req.file.filename}`;
+  if (req.file) updates.avatar = getFileUrl(req.file);
   if (password && password.trim()) {
     if (password !== confirmPassword) {
       const user = await db.getUserById(req.user.id);
@@ -171,7 +167,7 @@ router.post('/profile/update', authMiddleware, upload.single('avatar'), async (r
 // ── IMAGE UPLOAD ──────────────────────────────────────────────────
 router.post('/upload-image', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
-  res.json({ url: `/uploads/${req.file.filename}` });
+  res.json({ url: getFileUrl(req.file) });
 });
 
 module.exports = router;

@@ -22,7 +22,7 @@
     "jsonwebtoken": "^9.0.3",
     "lowdb": "^7.0.1",
     "marked": "^18.0.4",
-    "multer": "^2.1.1",
+    "multer": "^1.4.5-lts.2",
     "multer-storage-cloudinary": "^4.0.0",
     "pg": "^8.21.0",
     "slugify": "^1.6.9"
