@@ -24,4 +24,9 @@ function apiAuth(req, res, next) {
   }
 }
 
-module.exports = { authMiddleware, apiAuth, JWT_SECRET };
+function adminOnly(req, res, next) {
+  if (req.user?.role !== 'admin') return res.redirect('/admin');
+  next();
+}
+
+module.exports = { authMiddleware, apiAuth, adminOnly, JWT_SECRET };

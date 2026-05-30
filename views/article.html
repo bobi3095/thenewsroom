@@ -23,15 +23,26 @@
           <p class="article-deck"><%= article.excerpt %></p>
         <% } %>
         <div class="article-byline">
-          <span class="byline-name">By <%= article.author %></span>
-          <span class="byline-dot">·</span>
-          <span class="byline-date">
-            <%= new Date(article.createdAt).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}) %>
-          </span>
-          <% if (article.views > 0) { %>
-          <span class="byline-dot">·</span>
-          <span class="byline-date"><%= article.views %> views</span>
-          <% } %>
+          <div style="display:flex;align-items:center;gap:14px;flex:1">
+            <% if (article.authorAvatar) { %>
+              <img src="<%= article.authorAvatar %>" alt="<%= article.author %>"
+                style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border)">
+            <% } else { %>
+              <div style="width:48px;height:48px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white;font-family:var(--serif);font-size:1.2rem;font-weight:700">
+                <%= article.author ? article.author[0].toUpperCase() : 'A' %>
+              </div>
+            <% } %>
+            <div>
+              <div class="byline-name" style="font-size:0.88rem">By <%= article.author %></div>
+              <% if (article.authorBio) { %>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px"><%= article.authorBio %></div>
+              <% } %>
+              <div class="byline-date" style="margin-top:2px">
+                <%= new Date(article.createdAt).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}) %>
+                <% if (article.views > 0) { %> · <%= article.views %> views<% } %>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 

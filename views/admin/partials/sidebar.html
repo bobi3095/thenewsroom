@@ -11,6 +11,14 @@
     <a href="/admin/articles/new" class="<%= typeof activePage !== 'undefined' && activePage === 'new-article' ? 'active' : '' %>">
       <span class="icon">✏️</span> <span>New Article</span>
     </a>
+
+    <% if (user.role === 'admin') { %>
+    <div class="nav-section-label" style="margin-top:8px">Team</div>
+    <a href="/admin/authors" class="<%= typeof activePage !== 'undefined' && activePage === 'authors' ? 'active' : '' %>">
+      <span class="icon">👥</span> <span>Authors</span>
+    </a>
+    <% } %>
+
     <div class="nav-section-label" style="margin-top:8px">Sections</div>
     <% categories.forEach(cat => { %>
     <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" target="_blank">
@@ -19,11 +27,21 @@
     <% }) %>
   </nav>
   <div class="sidebar-bottom">
-    <a href="/" target="_blank">
-      <span>🌐</span> <span>View Site</span>
+    <!-- Author profile preview -->
+    <a href="/admin/profile" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.05);border-radius:4px">
+      <% if (user.avatar) { %>
+        <img src="<%= user.avatar %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">
+      <% } else { %>
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0">
+          <%= user.name ? user.name[0].toUpperCase() : 'A' %>
+        </div>
+      <% } %>
+      <div>
+        <div style="font-size:0.78rem;color:white;font-weight:600"><%= user.name %></div>
+        <div style="font-size:0.65rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.08em"><%= user.role %></div>
+      </div>
     </a>
-    <a href="/admin/logout" style="margin-top:10px;color:rgba(255,0,0,0.5)">
-      <span>⇥</span> <span>Logout</span>
-    </a>
+    <a href="/" target="_blank"><span>🌐</span> <span>View Site</span></a>
+    <a href="/admin/logout" style="margin-top:10px;color:rgba(255,0,0,0.5)"><span>⇥</span> <span>Logout</span></a>
   </div>
 </aside>

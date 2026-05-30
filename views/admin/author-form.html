@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= author ? 'Edit Author' : 'New Author' %> — The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: 'authors', categories, user }) %>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title"><%= author ? 'Edit Author' : 'Add New Author' %></div>
+      <div class="topbar-actions">
+        <a href="/admin/authors" class="btn btn-outline btn-sm">← Back</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+
+      <div style="max-width:560px">
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div class="admin-card-title"><%= author ? 'Edit Author Profile' : 'Author Details' %></div>
+          </div>
+          <div style="padding:24px">
+            <form method="POST" action="<%= author ? '/admin/authors/update/'+author.id : '/admin/authors/create' %>" enctype="multipart/form-data">
+
+              <!-- Avatar -->
+              <div class="form-group" style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
+                <div id="avatar-preview" style="width:80px;height:80px;border-radius:50%;overflow:hidden;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid var(--border)">
+                  <% if (author && author.avatar) { %>
+                    <img src="<%= author.avatar %>" style="width:100%;height:100%;object-fit:cover" id="avatar-img">
+                  <% } else { %>
+                    <span style="color:white;font-size:1.8rem;font-family:var(--serif);font-weight:700" id="avatar-initial">
+                      <%= author ? author.name[0].toUpperCase() : '?' %>
+                    </span>
+                  <% } %>
+                </div>
+                <div>
+                  <label class="form-label">Profile Picture</label>
+                  <input type="file" name="avatar" accept="image/*" onchange="previewAvatar(this)"
+                    style="font-size:0.8rem;color:var(--muted)">
+                  <p style="font-size:0.7rem;color:var(--muted);margin-top:4px">JPG or PNG, square image recommended</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" name="name" class="form-control" required
+                  value="<%= author ? author.name : '' %>" placeholder="e.g. John Smith"
+                  oninput="updateInitial(this.value)">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Username *</label>
+                <input type="text" name="username" class="form-control" required
+                  value="<%= author ? author.username : '' %>"
+                  placeholder="e.g. johnsmith" <%= author ? 'readonly style="background:#f5f4f0;color:var(--muted)"' : '' %>>
+                <% if (author) { %><p style="font-size:0.72rem;color:var(--muted);margin-top:4px">Username cannot be changed</p><% } %>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label"><%= author ? 'New Password' : 'Password *' %></label>
+                <input type="password" name="password" class="form-control"
+                  <%= author ? '' : 'required' %>
+                  placeholder="<%= author ? 'Leave blank to keep current password' : 'Set a strong password' %>">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Bio / Short Description</label>
+                <textarea name="bio" class="form-control" rows="3"
+                  placeholder="e.g. Senior correspondent covering South Asian politics"><%= author ? author.bio : '' %></textarea>
+                <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">Shown below the author's name on articles</p>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-top:8px">
+                <button type="submit" class="btn btn-accent">
+                  <%= author ? 'Save Changes' : 'Create Author' %>
+                </button>
+                <a href="/admin/authors" class="btn btn-outline">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function previewAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('avatar-preview');
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function updateInitial(name) {
+  const initial = document.getElementById('avatar-initial');
+  if (initial && name) initial.textContent = name[0].toUpperCase();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authors — The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: 'authors', categories, user }) %>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title">Authors</div>
+      <div class="topbar-actions">
+        <a href="/admin/authors/new" class="btn btn-accent">+ Add Author</a>
+      </div>
+    </div>
+    <div class="admin-content">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-title">All Authors (<%= authors.length %>)</div>
+        </div>
+        <% if (authors.length > 0) { %>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Author</th>
+              <th>Username</th>
+              <th>Bio</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% authors.forEach(a => { %>
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <% if (a.avatar) { %>
+                    <img src="<%= a.avatar %>" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--border)">
+                  <% } else { %>
+                    <div style="width:40px;height:40px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0">
+                      <%= a.name[0].toUpperCase() %>
+                    </div>
+                  <% } %>
+                  <div style="font-weight:600;color:var(--ink)"><%= a.name %></div>
+                </div>
+              </td>
+              <td style="color:var(--muted);font-size:0.8rem">@<%= a.username %></td>
+              <td style="color:var(--muted);font-size:0.8rem;max-width:200px">
+                <%= a.bio ? a.bio.substring(0,80) + (a.bio.length > 80 ? '...' : '') : '—' %>
+              </td>
+              <td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">
+                <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+              </td>
+              <td>
+                <div style="display:flex;gap:6px">
+                  <a href="/admin/authors/edit/<%= a.id %>" class="btn btn-icon btn-sm">Edit</a>
+                  <form method="POST" action="/admin/authors/delete/<%= a.id %>" onsubmit="return confirm('Delete this author? Their articles will remain.')" style="display:inline">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } else { %>
+        <div style="padding:48px;text-align:center;color:var(--muted)">
+          <div style="font-size:2rem;margin-bottom:12px">👤</div>
+          <p>No authors yet. <a href="/admin/authors/new" style="color:var(--accent)">Add your first author</a></p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
