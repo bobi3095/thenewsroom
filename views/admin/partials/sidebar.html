@@ -1,6 +1,5 @@
 <aside class="admin-sidebar">
   <div class="sidebar-logo">
-    <img src="/images/logo.jpg" alt="The News Room" style="height:40px;width:auto;filter:brightness(0) invert(1);margin-bottom:6px;display:block">
     <div class="name">The News Room</div>
     <div class="role">Admin Panel</div>
   </div>
@@ -12,7 +11,6 @@
     <a href="/admin/articles/new" class="<%= typeof activePage !== 'undefined' && activePage === 'new-article' ? 'active' : '' %>">
       <span class="icon">✏️</span> <span>New Article</span>
     </a>
-
     <div class="nav-section-label" style="margin-top:8px">Sections</div>
     <% categories.forEach(cat => { %>
     <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" target="_blank">

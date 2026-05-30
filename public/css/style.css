@@ -57,19 +57,9 @@ button { cursor: pointer; font-family: var(--sans); }
 
 .site-logo {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: baseline;
+  gap: 8px;
   flex-shrink: 0;
-  text-decoration: none;
-}
-
-.logo-img {
-  height: 48px;
-  width: auto;
-  display: block;
-  object-fit: contain;
-  /* White background logo on dark header — invert makes it white */
-  filter: brightness(0) invert(1);
 }
 
 .site-logo .wordmark {
