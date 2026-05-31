@@ -1,8 +1,9 @@
 <aside class="admin-sidebar">
   <div class="sidebar-logo">
     <div class="name">The News Room</div>
-    <div class="role">Admin Panel</div>
+    <div class="role"><%= user.role === 'admin' ? 'Admin Panel' : 'Author Panel' %></div>
   </div>
+
   <nav class="sidebar-nav">
     <div class="nav-section-label">Content</div>
     <a href="/admin" class="<%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
@@ -26,11 +27,12 @@
     </a>
     <% }) %>
   </nav>
+
   <div class="sidebar-bottom">
-    <!-- Author profile preview -->
-    <a href="/admin/profile" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.05);border-radius:4px">
+    <!-- Profile preview -->
+    <a href="/admin/profile" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,0.05);border-radius:4px;text-decoration:none">
       <% if (user.avatar) { %>
-        <img src="<%= user.avatar %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0">
+        <img src="<%= user.avatar %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid rgba(255,255,255,0.15)">
       <% } else { %>
         <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0">
           <%= user.name ? user.name[0].toUpperCase() : 'A' %>
@@ -38,7 +40,7 @@
       <% } %>
       <div>
         <div style="font-size:0.78rem;color:white;font-weight:600"><%= user.name %></div>
-        <div style="font-size:0.65rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.08em"><%= user.role %></div>
+        <div style="font-size:0.62rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.08em"><%= user.role %></div>
       </div>
     </a>
     <a href="/" target="_blank"><span>🌐</span> <span>View Site</span></a>

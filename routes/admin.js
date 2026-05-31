@@ -30,16 +30,34 @@ router.get('/logout', (req, res) => { res.clearCookie('token'); res.redirect('/a
 
 // ── DASHBOARD ─────────────────────────────────────────────────────
 router.get('/', authMiddleware, async (req, res) => {
-  const articles = await db.getArticles({});
+  const allArticles = await db.getArticles({});
+
+  if (req.user.role === 'author') {
+    // Author sees only their own articles
+    const myArticles = allArticles.filter(a => a.authorId === req.user.id);
+    const stats = {
+      total: myArticles.length,
+      published: myArticles.filter(a => a.status === 'published').length,
+      drafts: myArticles.filter(a => a.status === 'draft').length,
+      totalViews: myArticles.reduce((s, a) => s + (a.views||0), 0)
+    };
+    return res.render('admin/author-dashboard', {
+      user: req.user,
+      articles: myArticles,
+      stats,
+      categories: db.categories
+    });
+  }
+
+  // Admin sees everything
   const allUsers = await db.getAllUsers();
-  const published = articles.filter(a => a.status === 'published').length;
-  const drafts = articles.filter(a => a.status === 'draft').length;
-  const totalViews = articles.reduce((s, a) => s + (a.views||0), 0);
-  const myArticles = req.user.role === 'admin' ? articles : articles.filter(a => a.authorId === req.user.id);
+  const published = allArticles.filter(a => a.status === 'published').length;
+  const drafts = allArticles.filter(a => a.status === 'draft').length;
+  const totalViews = allArticles.reduce((s, a) => s + (a.views||0), 0);
   res.render('admin/dashboard', {
     user: req.user,
-    articles: myArticles.slice(0, 20),
-    stats: { total: myArticles.length, published, drafts, totalViews, authors: allUsers.filter(u => u.role === 'author').length },
+    articles: allArticles.slice(0, 20),
+    stats: { total: allArticles.length, published, drafts, totalViews, authors: allUsers.filter(u => u.role === 'author').length },
     categories: db.categories
   });
 });
