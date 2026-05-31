@@ -19,10 +19,13 @@ if (useCloudinary) {
 
   const storage = new CloudinaryStorage({
     cloudinary,
-    params: {
-      folder: 'thenewsroom',
-      allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-      transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+    params: async (req, file) => {
+      return {
+        folder: 'thenewsroom',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        resource_type: 'image',
+        transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+      };
     }
   });
 
@@ -47,9 +50,15 @@ if (useCloudinary) {
 function getFileUrl(file) {
   if (!file) return null;
   if (useCloudinary) {
-    // Log file object so we can debug what Cloudinary returns
-    console.log('Cloudinary file object:', JSON.stringify(file));
-    return file.secure_url || file.path || file.url || null;
+    // Log all keys to find the right URL field
+    console.log('Cloudinary file keys:', Object.keys(file));
+    console.log('Cloudinary path:', file.path);
+    console.log('Cloudinary secure_url:', file.secure_url);
+    console.log('Cloudinary filename:', file.filename);
+    // multer-storage-cloudinary v4 stores the public URL in file.path
+    const url = file.secure_url || file.path || file.url || file.filename || null;
+    console.log('Using URL:', url);
+    return url;
   }
   return '/uploads/' + file.filename; // Local
 }
