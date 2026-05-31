@@ -21,7 +21,7 @@ app.use('/', require('./routes/public'));
 app.use('/admin', require('./routes/admin'));
 
 app.use((req, res) => {
-  res.status(404).render('404', { categories: db.categories });
+  res.status(404).render('404', { categories: db.categories, page: '404' });
 });
 
 // Init DB then start server

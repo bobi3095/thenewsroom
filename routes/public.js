@@ -32,7 +32,7 @@ router.get('/category/:slug', async (req, res) => {
 router.get('/article/:slug', async (req, res) => {
   try {
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
-    if (!article) return res.status(404).render('404', { categories: db.categories });
+    if (!article) return res.status(404).render('404', { categories: db.categories, page: '404' });
     await db.incrementViews(article.id);
     const allPublished = await db.getArticles({ status: 'published', category: article.category });
     const related = allPublished.filter(a => a.id !== article.id).slice(0, 3);
