@@ -2,65 +2,70 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Use Cloudinary if credentials are set, otherwise save locally
 const useCloudinary = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
 
-let upload;
+// Always use memory storage — we handle saving ourselves
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp|gif/;
+    const ok = allowed.test(file.mimetype) && allowed.test(path.extname(file.originalname).toLowerCase());
+    ok ? cb(null, true) : cb(new Error('Only image files allowed'));
+  }
+});
+
+// Call this after multer to actually save the file
+async function saveFile(file) {
+  if (!file) return null;
+
+  if (useCloudinary) {
+    // Upload directly using Cloudinary SDK v2
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'thenewsroom',
+          resource_type: 'image',
+          transformation: [{ width: 1200, crop: 'limit', quality: 'auto:good' }]
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Cloudinary error:', error);
+            return reject(error);
+          }
+          console.log('✅ Cloudinary upload success:', result.secure_url);
+          resolve(result.secure_url);
+        }
+      );
+      // Pipe the buffer directly
+      const streamifier = require('streamifier');
+      streamifier.createReadStream(file.buffer).pipe(uploadStream);
+    });
+
+  } else {
+    // Save locally for dev
+    const uploadDir = path.join(__dirname, '../public/uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+    const filename = Date.now() + path.extname(file.originalname);
+    const filepath = path.join(uploadDir, filename);
+    fs.writeFileSync(filepath, file.buffer);
+    console.log('💾 Local upload:', filename);
+    return '/uploads/' + filename;
+  }
+}
 
 if (useCloudinary) {
-  const cloudinary = require('cloudinary').v2;
-  const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-
-  const storage = new CloudinaryStorage({
-    cloudinary,
-    params: async (req, file) => {
-      return {
-        folder: 'thenewsroom',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        resource_type: 'image',
-        transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
-      };
-    }
-  });
-
-  upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
   console.log('✅ Cloudinary upload enabled');
-
 } else {
-  // Local storage fallback (for local dev)
-  const uploadDir = path.join(__dirname, '../public/uploads');
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-  });
-
-  upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
   console.log('⚠️  Local upload (images will reset on Render restart)');
 }
 
-// Helper to get the URL from an uploaded file
-function getFileUrl(file) {
-  if (!file) return null;
-  if (useCloudinary) {
-    // Log all keys to find the right URL field
-    console.log('Cloudinary file keys:', Object.keys(file));
-    console.log('Cloudinary path:', file.path);
-    console.log('Cloudinary secure_url:', file.secure_url);
-    console.log('Cloudinary filename:', file.filename);
-    // multer-storage-cloudinary v4 stores the public URL in file.path
-    const url = file.secure_url || file.path || file.url || file.filename || null;
-    console.log('Using URL:', url);
-    return url;
-  }
-  return '/uploads/' + file.filename; // Local
-}
-
-module.exports = { upload, getFileUrl };
+module.exports = { upload, saveFile };
