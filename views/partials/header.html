@@ -17,12 +17,88 @@
   <nav class="site-nav">
     <div class="nav-inner">
       <a href="/" class="<%= page === 'home' ? 'active' : '' %>">Home</a>
-      <% categories.forEach(cat => { %>
-      <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>"><%= cat %></a>
-      <% }) %>
+      <a href="/latest">Latest <span class="live-dot"></span></a>
+      <a href="/category/india">India</a>
+      <a href="/category/politics">Politics</a>
+      <a href="/category/world-news">World</a>
+      <a href="/category/uncovered">Uncovered</a>
+      <a href="/category/opinion">Opinion</a>
+      <div class="nav-dropdown">
+        <span class="nav-dropdown-trigger">More ▾</span>
+        <div class="nav-dropdown-menu">
+          <a href="/category/data">Data</a>
+          <a href="/category/sports">Sports</a>
+          <a href="/category/law">Law News</a>
+          <a href="/category/govt-schemes">Govt Schemes</a>
+          <a href="/category/education">Education</a>
+          <a href="/category/technology">Technology</a>
+        </div>
+      </div>
     </div>
   </nav>
 </header>
+
+<style>
+.live-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink {
+  0%,100% { opacity:1; } 50% { opacity:0.3; }
+}
+.nav-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.nav-dropdown-trigger {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.6);
+  padding: 10px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s;
+  user-select: none;
+}
+.nav-dropdown:hover .nav-dropdown-trigger { color: white; }
+.nav-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1a1a1a;
+  border-top: 2px solid var(--accent);
+  min-width: 160px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.nav-dropdown:hover .nav-dropdown-menu { display: block; }
+.nav-dropdown-menu a {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.6);
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.15s;
+}
+.nav-dropdown-menu a:hover {
+  color: white;
+  background: rgba(200,16,46,0.2);
+  padding-left: 22px;
+}
+</style>
+
 <script>
   document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
 </script>
