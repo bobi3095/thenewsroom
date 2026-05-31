@@ -76,7 +76,11 @@ router.get('/articles/edit/:id', authMiddleware, async (req, res) => {
 
 router.post('/articles/save', authMiddleware, upload.single('image'), async (req, res) => {
   try {
-    const { id, title, content, excerpt, category, status, featured, removeImage } = req.body;
+    const { id, title, content, excerpt, status, featured, removeImage } = req.body;
+    // Handle multiple categories - comes as array or single value
+    const rawCats = req.body.categories;
+    const categoriesArr = Array.isArray(rawCats) ? rawCats : (rawCats ? [rawCats] : []);
+    const primaryCategory = categoriesArr[0] || '';
     const imageUrl = await saveFile(req.file);
 
     if (id) {
@@ -87,7 +91,9 @@ router.post('/articles/save', authMiddleware, upload.single('image'), async (req
         await deleteFile(existing.image);
       }
       await db.updateArticle(parseInt(id), {
-        title, content, excerpt, category,
+        title, content, excerpt,
+        category: primaryCategory,
+        categories: categoriesArr,
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
         slug: slugify(title),
@@ -95,7 +101,9 @@ router.post('/articles/save', authMiddleware, upload.single('image'), async (req
       });
     } else {
       await db.createArticle({
-        title, content, excerpt, category,
+        title, content, excerpt,
+        category: primaryCategory,
+        categories: categoriesArr,
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : false,
         slug: slugify(title),

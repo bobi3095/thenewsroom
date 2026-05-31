@@ -21,7 +21,12 @@ app.use('/', require('./routes/public'));
 app.use('/admin', require('./routes/admin'));
 
 app.use((req, res) => {
-  res.status(404).render('404', { categories: db.categories, page: '404' });
+  res.status(404).render('404', {
+    categories: db.categories,
+    navCategories: ['Politics', 'World News', 'India', 'Uncovered', 'Opinion'],
+    moreCategories: ['Data', 'Sports', 'Law', 'Govt Schemes', 'Education', 'Technology'],
+    page: '404'
+  });
 });
 
 // Init DB then start server

@@ -16,6 +16,9 @@
     <div class="container">
       <div class="category-label">Section</div>
       <h1 class="category-name"><%= category %></h1>
+      <% if (typeof subtitle !== 'undefined' && subtitle) { %>
+        <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-top:8px"><%= subtitle %></p>
+      <% } %>
     </div>
   </div>
 

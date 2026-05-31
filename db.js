@@ -29,6 +29,7 @@ async function initPostgres() {
       title TEXT NOT NULL,
       slug TEXT UNIQUE NOT NULL,
       category TEXT,
+      categories TEXT[] DEFAULT '{}',
       excerpt TEXT,
       content TEXT,
       author TEXT,
@@ -46,6 +47,9 @@ async function initPostgres() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT '';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
+  `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}';
   `).catch(() => {});
 
   // Seed admin
@@ -76,7 +80,7 @@ async function initPostgres() {
 }
 
 const db = {
-  categories: ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered'],
+  categories: ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered', 'Opinion', 'India', 'Data', 'Law', 'Govt Schemes', 'Education'],
 
   // ── ARTICLES ──────────────────────────────────────────────────────
   async getArticles(filter = {}) {
@@ -85,7 +89,11 @@ const db = {
                FROM articles a LEFT JOIN users u ON a.author_id = u.id`;
       const conditions = [], vals = [];
       if (filter.status) { conditions.push(`a.status = $${vals.length+1}`); vals.push(filter.status); }
-      if (filter.category) { conditions.push(`a.category = $${vals.length+1}`); vals.push(filter.category); }
+      if (filter.category) { 
+        // Match if primary category OR in categories array
+        conditions.push(`(a.category = $${vals.length+1} OR $${vals.length+1} = ANY(a.categories))`); 
+        vals.push(filter.category); 
+      }
       if (filter.slug) { conditions.push(`a.slug = $${vals.length+1}`); vals.push(filter.slug); }
       if (filter.id) { conditions.push(`a.id = $${vals.length+1}`); vals.push(filter.id); }
       if (filter.authorId) { conditions.push(`a.author_id = $${vals.length+1}`); vals.push(filter.authorId); }
@@ -116,10 +124,11 @@ const db = {
 
   async createArticle(data) {
     if (isPostgres) {
+      const cats = data.categories || [data.category];
       const { rows } = await pool.query(`
-        INSERT INTO articles (title,slug,category,excerpt,content,author,author_id,status,featured,image)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
-      `, [data.title,data.slug,data.category,data.excerpt,data.content,data.author,data.authorId,data.status,data.featured,data.image||'']);
+        INSERT INTO articles (title,slug,category,categories,excerpt,content,author,author_id,status,featured,image)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
+      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.author,data.authorId,data.status,data.featured,data.image||'']);
       return pgToArticle(rows[0]);
     } else {
       const lowdb = getLowdb();
@@ -133,10 +142,11 @@ const db = {
 
   async updateArticle(id, data) {
     if (isPostgres) {
+      const cats = data.categories || [data.category];
       const { rows } = await pool.query(`
-        UPDATE articles SET title=$1,slug=$2,category=$3,excerpt=$4,content=$5,
-        status=$6,featured=$7,image=$8,updated_at=NOW() WHERE id=$9 RETURNING *
-      `, [data.title,data.slug,data.category,data.excerpt,data.content,data.status,data.featured,data.image,id]);
+        UPDATE articles SET title=$1,slug=$2,category=$3,categories=$4,excerpt=$5,content=$6,
+        status=$7,featured=$8,image=$9,updated_at=NOW() WHERE id=$10 RETURNING *
+      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.status,data.featured,data.image,id]);
       return rows[0] ? pgToArticle(rows[0]) : null;
     } else {
       const lowdb = getLowdb();
@@ -249,6 +259,7 @@ const db = {
 function pgToArticle(row) {
   return {
     id: row.id, title: row.title, slug: row.slug, category: row.category,
+    categories: row.categories || [],
     excerpt: row.excerpt, content: row.content, author: row.author,
     authorId: row.author_id, status: row.status, featured: row.featured,
     image: row.image, views: row.views,

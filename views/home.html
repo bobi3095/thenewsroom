@@ -5,86 +5,336 @@
   <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The News Room — Independent Journalism</title>
-  <meta name="description" content="The News Room: Independent journalism covering Politics, Technology, Sports, World News and the stories mainstream media won't touch.">
+  <meta name="description" content="Independent journalism covering Politics, India, World News, Technology and the stories mainstream media won't touch.">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── HERO GRID (your wireframe) ── */
+    .hero-new-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 2px;
+      background: var(--border);
+      margin-bottom: 2px;
+    }
+
+    /* Left col - World News */
+    .hero-left {
+      background: var(--card-bg);
+      padding: 20px;
+    }
+
+    /* Center col - Featured/Hero */
+    .hero-center {
+      background: var(--card-bg);
+      overflow: hidden;
+    }
+
+    /* Right col - Latest News */
+    .hero-right {
+      background: var(--card-bg);
+      padding: 0;
+      overflow: hidden;
+    }
+
+    /* Bottom row */
+    .hero-bottom-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 2px;
+      background: var(--border);
+    }
+
+    .hero-bottom-col {
+      background: var(--card-bg);
+      padding: 20px;
+    }
+
+    /* Col headers */
+    .col-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--white);
+      background: var(--ink);
+      padding: 7px 12px;
+      margin: -20px -20px 16px -20px;
+    }
+
+    .col-header.accent { background: var(--accent); }
+
+    /* Latest news right panel */
+    .latest-panel-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--white);
+      background: var(--accent);
+      padding: 7px 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .latest-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .latest-item:hover { background: #faf9f7; }
+    .latest-item:last-child { border-bottom: none; }
+
+    .latest-item-time {
+      font-size: 0.62rem;
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .latest-item-title {
+      font-family: var(--serif);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink);
+      transition: color 0.15s;
+    }
+    .latest-item:hover .latest-item-title { color: var(--accent); }
+
+    /* Small article list item */
+    .small-article {
+      display: flex;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .small-article:last-child { border-bottom: none; }
+
+    .small-article-num {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--border);
+      line-height: 1;
+      flex-shrink: 0;
+      width: 28px;
+    }
+
+    .small-article-title {
+      font-family: var(--serif);
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--ink);
+      transition: color 0.15s;
+    }
+    .small-article:hover .small-article-title { color: var(--accent); }
+
+    .small-article-meta {
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Today's news bottom section */
+    .todays-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2px;
+      background: var(--border);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero-new-grid { grid-template-columns: 1fr; }
+      .hero-bottom-grid { grid-template-columns: 1fr 1fr; }
+      .hero-left, .hero-right { display: none; }
+      .todays-grid { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 640px) {
+      .hero-bottom-grid { grid-template-columns: 1fr; }
+      .todays-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
 <%- include('partials/header.html') %>
 
 <main>
-  <!-- BREAKING BAR -->
-  <% if (latest.length > 0) { %>
+  <!-- BREAKING TICKER -->
+  <% if (latestNews.length > 0) { %>
   <div class="breaking-bar">
-    <span class="breaking-label">Latest</span>
+    <span class="breaking-label">Breaking</span>
     <div class="ticker-wrap">
       <div class="ticker-items">
-        <% for(let i = 0; i < Math.min(latest.length, 5); i++) { %>
-        <span><a href="/article/<%= latest[i].slug %>" style="color:white"><%= latest[i].title %></a></span>
+        <% for(let i = 0; i < Math.min(latestNews.length, 6); i++) { %>
+        <span><a href="/article/<%= latestNews[i].slug %>" style="color:white"><%= latestNews[i].title %></a></span>
         <% } %>
-        <% for(let i = 0; i < Math.min(latest.length, 5); i++) { %>
-        <span><a href="/article/<%= latest[i].slug %>" style="color:white"><%= latest[i].title %></a></span>
+        <% for(let i = 0; i < Math.min(latestNews.length, 6); i++) { %>
+        <span><a href="/article/<%= latestNews[i].slug %>" style="color:white"><%= latestNews[i].title %></a></span>
         <% } %>
       </div>
     </div>
   </div>
   <% } %>
 
-  <!-- HERO -->
-  <% if (featured) { %>
-  <section class="hero-section">
+  <!-- ── MAIN HERO SECTION (your wireframe top row) ── -->
+  <section style="padding: 24px 0 0">
     <div class="container">
-      <div class="hero-grid">
-        <!-- Featured Article -->
-        <div class="hero-main">
-          <a href="/article/<%= featured.slug %>">
-            <div class="hero-image">
-              <% if (featured.image) { %>
-                <img src="<%= featured.image %>" alt="<%= featured.title %>">
-              <% } else { %>
-                <div class="hero-image-placeholder">🗞</div>
-              <% } %>
-            </div>
-            <div class="hero-content">
-              <div class="hero-category"><%= featured.category %></div>
-              <h1 class="hero-title"><%= featured.title %></h1>
-              <% if (featured.excerpt) { %>
-                <p class="hero-excerpt"><%= featured.excerpt %></p>
-              <% } %>
-              <div class="hero-meta">
-                By <%= featured.author %> &nbsp;·&nbsp;
-                <%= new Date(featured.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %>
+      <div class="hero-new-grid">
+
+        <!-- LEFT: World News -->
+        <div class="hero-left">
+          <div class="col-header">🌍 World News</div>
+          <% const worldNews = byCategory['World News'] || []; %>
+          <% if (worldNews.length > 0) { %>
+            <% worldNews.forEach((a, i) => { %>
+            <a href="/article/<%= a.slug %>" class="small-article">
+              <div class="small-article-num">0<%= i+1 %></div>
+              <div>
+                <div class="small-article-title"><%= a.title %></div>
+                <div class="small-article-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) %></div>
               </div>
-            </div>
-          </a>
+            </a>
+            <% }) %>
+            <a href="/category/world-news" style="display:block;margin-top:12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)">More World News →</a>
+          <% } else { %>
+            <p style="color:var(--muted);font-size:0.82rem">No world news yet</p>
+          <% } %>
         </div>
 
-        <!-- Sidebar Stories -->
-        <div class="hero-sidebar">
-          <% const sidebarItems = latest.slice(0, 4); %>
-          <% sidebarItems.forEach(a => { %>
-          <a href="/article/<%= a.slug %>" class="sidebar-article">
-            <div class="sidebar-category"><%= a.category %></div>
-            <div class="sidebar-title"><%= a.title %></div>
-            <div class="sidebar-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) %></div>
+        <!-- CENTER: Hero/Featured Article -->
+        <div class="hero-center">
+          <% if (hero) { %>
+          <a href="/article/<%= hero.slug %>" style="display:block;height:100%">
+            <div style="height:320px;background:linear-gradient(135deg,#1a1a2e,#0f3460);overflow:hidden;position:relative">
+              <% if (hero.image) { %>
+                <img src="<%= hero.image %>" alt="<%= hero.title %>" style="width:100%;height:100%;object-fit:cover;transition:transform 0.5s ease">
+              <% } else { %>
+                <div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.1);font-size:4rem">🗞</div>
+              <% } %>
+              <div style="position:absolute;top:12px;left:12px;background:var(--accent);color:white;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;padding:4px 10px">Featured</div>
+            </div>
+            <div style="padding:20px 24px 24px">
+              <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:8px"><%= hero.category %></div>
+              <h1 style="font-family:var(--serif);font-size:1.6rem;font-weight:700;line-height:1.2;color:var(--ink);letter-spacing:-0.02em;margin-bottom:10px"><%= hero.title %></h1>
+              <% if (hero.excerpt) { %><p style="font-family:var(--body-serif);font-size:0.9rem;color:var(--muted);line-height:1.6"><%= hero.excerpt.substring(0,140) %>...</p><% } %>
+              <div style="margin-top:10px;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">By <%= hero.author %> · <%= new Date(hero.createdAt).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) %></div>
+            </div>
           </a>
-          <% }) %>
+          <% } else { %>
+          <div style="padding:60px;text-align:center;color:var(--muted)">
+            <div style="font-size:3rem;margin-bottom:12px">📰</div>
+            <p>Mark an article as <strong>Featured</strong> in the admin panel to show it here</p>
+          </div>
+          <% } %>
         </div>
-      </div>
+
+        <!-- RIGHT: Latest News (last 6 hrs) -->
+        <div class="hero-right">
+          <div class="latest-panel-header">
+            <span style="display:inline-block;width:7px;height:7px;background:white;border-radius:50%;animation:pulse 1.5s infinite"></span>
+            Latest · Last 24 Hours
+          </div>
+          <% if (latestNews.length > 0) { %>
+            <% latestNews.slice(0, 8).forEach(a => { %>
+            <a href="/article/<%= a.slug %>" class="latest-item" style="display:block">
+              <div class="latest-item-time">
+                <%= Math.floor((Date.now() - new Date(a.createdAt)) / 60000) < 60
+                  ? Math.floor((Date.now() - new Date(a.createdAt)) / 60000) + ' mins ago'
+                  : Math.floor((Date.now() - new Date(a.createdAt)) / 3600000) + ' hrs ago' %>
+                · <%= a.category %>
+              </div>
+              <div class="latest-item-title"><%= a.title %></div>
+            </a>
+            <% }) %>
+            <a href="/latest" style="display:block;padding:12px 14px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);border-top:1px solid var(--border)">View All Latest →</a>
+          <% } else { %>
+            <div style="padding:24px;color:var(--muted);font-size:0.82rem;text-align:center">
+              <div style="font-size:1.5rem;margin-bottom:8px">⏰</div>
+              No news in the last 6 hours
+            </div>
+          <% } %>
+        </div>
+
+      </div><!-- end hero-new-grid -->
+
+      <!-- ── BOTTOM ROW (your wireframe bottom row) ── -->
+      <div class="hero-bottom-grid">
+
+        <!-- Politics -->
+        <div class="hero-bottom-col">
+          <div class="col-header accent">🏛 Politics</div>
+          <% const politicsNews = byCategory['Politics'] || []; %>
+          <% if (politicsNews.length > 0) { %>
+            <% politicsNews.forEach((a, i) => { %>
+            <a href="/article/<%= a.slug %>" class="small-article">
+              <div class="small-article-num">0<%= i+1 %></div>
+              <div>
+                <div class="small-article-title"><%= a.title %></div>
+                <div class="small-article-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) %></div>
+              </div>
+            </a>
+            <% }) %>
+            <a href="/category/politics" style="display:block;margin-top:12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)">More Politics →</a>
+          <% } else { %><p style="color:var(--muted);font-size:0.82rem">No politics news yet</p><% } %>
+        </div>
+
+        <!-- India -->
+        <div class="hero-bottom-col">
+          <div class="col-header">🇮🇳 India</div>
+          <% const indiaNews = byCategory['India'] || []; %>
+          <% if (indiaNews.length > 0) { %>
+            <% indiaNews.forEach((a, i) => { %>
+            <a href="/article/<%= a.slug %>" class="small-article">
+              <div class="small-article-num">0<%= i+1 %></div>
+              <div>
+                <div class="small-article-title"><%= a.title %></div>
+                <div class="small-article-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) %></div>
+              </div>
+            </a>
+            <% }) %>
+            <a href="/category/india" style="display:block;margin-top:12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)">More India →</a>
+          <% } else { %><p style="color:var(--muted);font-size:0.82rem">No India news yet</p><% } %>
+        </div>
+
+        <!-- Today's All News -->
+        <div class="hero-bottom-col">
+          <div class="col-header accent">📅 Today's News</div>
+          <% if (todaysNews.length > 0) { %>
+            <% todaysNews.slice(0,5).forEach((a, i) => { %>
+            <a href="/article/<%= a.slug %>" class="small-article">
+              <div class="small-article-num">0<%= i+1 %></div>
+              <div>
+                <div class="small-article-title"><%= a.title %></div>
+                <div class="small-article-meta"><%= a.category %> · <%= new Date(a.createdAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) %></div>
+              </div>
+            </a>
+            <% }) %>
+          <% } else { %><p style="color:var(--muted);font-size:0.82rem">No articles today yet</p><% } %>
+        </div>
+
+      </div><!-- end hero-bottom-grid -->
     </div>
   </section>
-  <% } %>
 
-  <!-- LATEST NEWS GRID -->
-  <% if (latest.length > 4) { %>
+  <!-- ── ALL RECENT ARTICLES (bottom section) ── -->
+  <% if (bottomArticles.length > 0) { %>
   <section class="article-section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Latest Stories</h2>
+        <h2 class="section-title">More Stories</h2>
         <a href="/search" class="section-link">All Articles →</a>
       </div>
       <div class="article-grid">
-        <% latest.slice(4, 8).forEach(a => { %>
+        <% bottomArticles.slice(0, 8).forEach(a => { %>
         <a href="/article/<%= a.slug %>" class="article-card">
           <div class="card-image">
             <% if (a.image) { %>
@@ -96,10 +346,8 @@
           <div class="card-content">
             <div class="card-category"><%= a.category %></div>
             <div class="card-title"><%= a.title %></div>
-            <div class="card-meta">
-              <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %>
-              <% if (a.views) { %> · <%= a.views %> views<% } %>
-            </div>
+            <% if (a.excerpt) { %><p style="font-size:0.78rem;color:var(--muted);line-height:1.5;margin-bottom:8px"><%= a.excerpt.substring(0,90) %>...</p><% } %>
+            <div class="card-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %></div>
           </div>
         </a>
         <% }) %>
@@ -107,39 +355,6 @@
     </div>
   </section>
   <% } %>
-
-  <!-- CATEGORY SECTIONS -->
-  <% categories.forEach(cat => { %>
-    <% if (byCategory[cat] && byCategory[cat].length > 0) { %>
-    <section class="article-section" style="padding-top: 0">
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title"><%= cat %></h2>
-          <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>" class="section-link">More <%= cat %> →</a>
-        </div>
-        <div class="article-list">
-          <% byCategory[cat].forEach(a => { %>
-          <a href="/article/<%= a.slug %>" class="list-article">
-            <div class="list-image">
-              <% if (a.image) { %>
-                <img src="<%= a.image %>" alt="<%= a.title %>">
-              <% } else { %>
-                <div class="list-image-placeholder">📰</div>
-              <% } %>
-            </div>
-            <div class="list-content">
-              <div class="list-category"><%= a.category %></div>
-              <div class="list-title"><%= a.title %></div>
-              <% if (a.excerpt) { %><p style="font-size:0.82rem;color:#888;margin-top:4px;line-height:1.5"><%= a.excerpt.substring(0,120) %><% if(a.excerpt.length>120) { %>...<% } %></p><% } %>
-              <div class="list-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) %></div>
-            </div>
-          </a>
-          <% }) %>
-        </div>
-      </div>
-    </section>
-    <% } %>
-  <% }) %>
 
   <!-- EMPTY STATE -->
   <% if (articles.length === 0) { %>

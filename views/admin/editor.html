@@ -101,17 +101,22 @@
               </button>
             </div>
 
-            <!-- Category -->
+            <!-- Categories (multi-select) -->
             <div class="panel-section">
-              <div class="panel-title">Category</div>
-              <select name="category" class="form-control" required>
-                <option value="">Select category...</option>
+              <div class="panel-title">Categories</div>
+              <p style="font-size:0.68rem;color:var(--muted);margin-bottom:10px">Select one or more. First selected = primary.</p>
+              <div style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto">
                 <% categories.forEach(cat => { %>
-                <option value="<%= cat %>" <%= article && article.category === cat ? 'selected' : '' %>>
-                  <%= cat %>
-                </option>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border:1px solid var(--border);transition:background 0.1s" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background='white'">
+                  <input type="checkbox" name="categories" value="<%= cat %>"
+                    <%= article && article.categories && article.categories.includes(cat) ? 'checked' : 
+                       article && article.category === cat ? 'checked' : '' %>
+                    style="accent-color:var(--accent);width:14px;height:14px">
+                  <span style="font-size:0.78rem;font-weight:500;color:var(--ink)"><%= cat %></span>
+                </label>
                 <% }) %>
-              </select>
+              </div>
+              <p style="font-size:0.65rem;color:var(--muted);margin-top:8px">⚠️ At least one category required</p>
             </div>
 
             <!-- Options -->
@@ -181,7 +186,15 @@ function prepareSubmit() {
 }
 
 // Also sync on any form submit
-document.getElementById('article-form').addEventListener('submit', prepareSubmit);
+document.getElementById('article-form').addEventListener('submit', function(e) {
+  const checked = document.querySelectorAll('input[name="categories"]:checked');
+  if (checked.length === 0) {
+    e.preventDefault();
+    alert('Please select at least one category');
+    return;
+  }
+  prepareSubmit();
+});
 
 // Formatting commands
 function fmt(cmd) {
