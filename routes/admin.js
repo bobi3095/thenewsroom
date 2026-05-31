@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
-const { upload, saveFile } = require('../middleware/upload');
+const { upload, saveFile, deleteFile } = require('../middleware/upload');
 
 const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -58,18 +58,22 @@ router.get('/articles/edit/:id', authMiddleware, async (req, res) => {
 
 router.post('/articles/save', authMiddleware, upload.single('image'), async (req, res) => {
   try {
-    const { id, title, content, excerpt, category, status, featured } = req.body;
+    const { id, title, content, excerpt, category, status, featured, removeImage } = req.body;
     const imageUrl = await saveFile(req.file);
 
     if (id) {
       const existing = await db.getArticle({ id: parseInt(id) });
       if (req.user.role !== 'admin' && existing?.authorId !== req.user.id) return res.redirect('/admin');
+      // Delete old image if new one uploaded OR user clicked Remove
+      if ((imageUrl || removeImage === '1') && existing?.image) {
+        await deleteFile(existing.image);
+      }
       await db.updateArticle(parseInt(id), {
         title, content, excerpt, category,
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
         slug: slugify(title),
-        image: imageUrl || existing?.image || ''
+        image: removeImage === '1' ? '' : (imageUrl || existing?.image || '')
       });
     } else {
       await db.createArticle({
@@ -134,7 +138,12 @@ router.post('/authors/update/:id', authMiddleware, adminOnly, upload.single('ava
     const id = parseInt(req.params.id);
     const updates = { name, bio: bio||'' };
     const avatarUrl = await saveFile(req.file);
-    if (avatarUrl) updates.avatar = avatarUrl;
+    if (avatarUrl) {
+      // Delete old avatar from Cloudinary
+      const existing = await db.getUserById(id);
+      if (existing?.avatar) await deleteFile(existing.avatar);
+      updates.avatar = avatarUrl;
+    }
     if (password && password.trim()) updates.password = bcrypt.hashSync(password, 10);
     await db.updateUser(id, updates);
     res.redirect('/admin/authors');
@@ -160,7 +169,12 @@ router.post('/profile/update', authMiddleware, upload.single('avatar'), async (r
     const { name, bio, password, confirmPassword } = req.body;
     const updates = { name, bio: bio||'' };
     const avatarUrl = await saveFile(req.file);
-    if (avatarUrl) updates.avatar = avatarUrl;
+    if (avatarUrl) {
+      // Delete old avatar from Cloudinary
+      const currentUser = await db.getUserById(req.user.id);
+      if (currentUser?.avatar) await deleteFile(currentUser.avatar);
+      updates.avatar = avatarUrl;
+    }
     if (password && password.trim()) {
       if (password !== confirmPassword) {
         const user = await db.getUserById(req.user.id);

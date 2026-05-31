@@ -68,4 +68,26 @@ if (useCloudinary) {
   console.log('⚠️  Local upload (images will reset on Render restart)');
 }
 
-module.exports = { upload, saveFile };
+// Delete a file from Cloudinary by its URL
+async function deleteFile(url) {
+  if (!url || !useCloudinary) return;
+  try {
+    // Extract public_id from Cloudinary URL
+    // URL format: https://res.cloudinary.com/cloud/image/upload/v123/thenewsroom/filename.jpg
+    const matches = url.match(/thenewsroom\/([^.]+)/);
+    if (!matches) return;
+    const publicId = 'thenewsroom/' + matches[1];
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log('🗑️  Cloudinary delete:', publicId, result.result);
+  } catch(err) {
+    console.error('Cloudinary delete error:', err.message);
+  }
+}
+
+module.exports = { upload, saveFile, deleteFile };

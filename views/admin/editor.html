@@ -140,8 +140,13 @@
               </div>
               <input type="file" id="image-input" name="image" accept="image/*" style="display:none" onchange="previewImage(this)">
               <% if (article && article.image) { %>
-              <div id="current-image-info" style="margin-top:8px;font-size:0.72rem;color:var(--muted)">
-                Current: <a href="<%= article.image %>" target="_blank" style="color:var(--accent)">View image</a>
+              <div id="current-image-wrap" style="margin-top:8px">
+                <img src="<%= article.image %>" style="width:100%;height:100px;object-fit:cover;margin-bottom:6px">
+                <div style="display:flex;gap:8px;align-items:center">
+                  <a href="<%= article.image %>" target="_blank" style="font-size:0.72rem;color:var(--accent)">View current</a>
+                  <button type="button" onclick="removeCurrentImage()" style="font-size:0.7rem;color:var(--danger);background:none;border:1px solid #fca5a5;padding:2px 8px;cursor:pointer">✕ Remove</button>
+                </div>
+                <input type="hidden" name="removeImage" id="remove-image-flag" value="0">
               </div>
               <% } %>
             </div>
@@ -234,6 +239,14 @@ document.getElementById('content-editor').addEventListener('keydown', e => {
     }
   }
 });
+
+// Remove current image
+function removeCurrentImage() {
+  const wrap = document.getElementById('current-image-wrap');
+  const flag = document.getElementById('remove-image-flag');
+  if (wrap) wrap.style.display = 'none';
+  if (flag) flag.value = '1';
+}
 
 // Auto-save to localStorage
 const SAVE_KEY = 'thenewsroom_draft_<%= article ? article.id : "new" %>';
