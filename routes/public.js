@@ -137,4 +137,57 @@ router.get('/search', async (req, res) => {
   } catch(e) { console.error(e); res.status(500).send('Server error'); }
 });
 
+// ── SITEMAP ───────────────────────────────────────────────────────
+router.get('/sitemap.xml', async (req, res) => {
+  try {
+    const articles = await db.getArticles({ status: 'published' });
+    const baseUrl = process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com';
+    const cats = ['politics','technology','sports','world-news','uncovered','opinion','india','data','law','govt-schemes','education'];
+
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">';
+
+    // Homepage
+    xml += '<url><loc>' + baseUrl + '/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>';
+    xml += '<url><loc>' + baseUrl + '/latest</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>';
+
+    // Categories
+    cats.forEach(cat => {
+      xml += '<url><loc>' + baseUrl + '/category/' + cat + '</loc><changefreq>hourly</changefreq><priority>0.8</priority></url>';
+    });
+
+    // Articles
+    articles.forEach(a => {
+      const title = (a.title || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      const date = new Date(a.createdAt).toISOString();
+      const lastmod = new Date(a.updatedAt || a.createdAt).toISOString().split('T')[0];
+      xml += '<url>';
+      xml += '<loc>' + baseUrl + '/article/' + a.slug + '</loc>';
+      xml += '<lastmod>' + lastmod + '</lastmod>';
+      xml += '<changefreq>weekly</changefreq>';
+      xml += '<priority>0.9</priority>';
+      xml += '<news:news>';
+      xml += '<news:publication><news:name>The News Room</news:name><news:language>en</news:language></news:publication>';
+      xml += '<news:publication_date>' + date + '</news:publication_date>';
+      xml += '<news:title>' + title + '</news:title>';
+      xml += '</news:news>';
+      xml += '</url>';
+    });
+
+    xml += '</urlset>';
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch(e) {
+    console.error('Sitemap error:', e);
+    res.status(500).send('Error generating sitemap');
+  }
+});
+
+// ── ROBOTS.TXT ────────────────────────────────────────────────────
+router.get('/robots.txt', (req, res) => {
+  const baseUrl = process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com';
+  res.header('Content-Type', 'text/plain');
+  res.send('User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ' + baseUrl + '/sitemap.xml');
+});
+
 module.exports = router;

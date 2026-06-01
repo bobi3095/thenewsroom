@@ -3,11 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
-  <meta name="google-site-verification" content="FbvvGkEMVhJijUUv15TFlvh5isJYFqu4KUa2jizuUUQ" />
-  <meta name="google-adsense-account" content="ca-pub-1671056769221306">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The News Room — Independent Journalism</title>
   <meta name="description" content="Independent journalism covering Politics, India, World News, Technology and the stories mainstream media won't touch.">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The News Room — Independent Journalism">
+  <meta property="og:description" content="Independent journalism covering Politics, India, World News and the stories mainstream media won't touch.">
+  <meta property="og:url" content="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>">
+  <meta property="og:site_name" content="The News Room">
+  <meta property="og:image" content="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>/images/logo.jpg">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The News Room — Independent Journalism">
+  <meta name="twitter:description" content="Independent journalism covering Politics, India, World News and the stories mainstream media won't touch.">
+
+  <link rel="canonical" href="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>">
   <link rel="stylesheet" href="/css/style.css">
   <style>
     /* ── HERO GRID (your wireframe) ── */
