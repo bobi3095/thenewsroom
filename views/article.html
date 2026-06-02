@@ -42,7 +42,10 @@
     <!-- Article Content -->
     <article>
       <header class="article-header">
-        <span class="article-category-badge"><%= article.category %></span>
+        <% const artCats = Array.isArray(article.categories) && article.categories.length > 0 ? article.categories : [article.category]; %>
+        <% artCats.forEach(cat => { %>
+        <span class="article-category-badge" style="margin-right:6px"><%= cat %></span>
+        <% }) %>
         <h1 class="article-headline"><%= article.title %></h1>
         <% if (article.excerpt) { %>
           <p class="article-deck"><%= article.excerpt %></p>
@@ -83,7 +86,9 @@
 
       <!-- Tags -->
       <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
-        <span class="tag"><%= article.category %></span>
+        <% artCats.forEach(cat => { %>
+      <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
+      <% }) %>
         <span class="tag">The News Room</span>
       </div>
 

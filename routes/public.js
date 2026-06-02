@@ -46,10 +46,13 @@ router.get('/', async (req, res) => {
     const last24hrs = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const todaysNews = articles.filter(a => new Date(a.createdAt) >= last24hrs).slice(0, 8);
 
-    // By category sections
+    // By category sections - check both primary category AND categories array
     const byCategory = {};
     ALL_CATEGORIES.forEach(cat => {
-      byCategory[cat] = articles.filter(a => a.category === cat).slice(0, 4);
+      byCategory[cat] = articles.filter(a =>
+        a.category === cat ||
+        (Array.isArray(a.categories) && a.categories.includes(cat))
+      ).slice(0, 4);
     });
 
     // Bottom articles (all recent non-featured)
@@ -104,8 +107,14 @@ router.get('/article/:slug', async (req, res) => {
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
     await db.incrementViews(article.id);
-    const allPublished = await db.getArticles({ status: 'published', category: article.category });
-    const related = allPublished.filter(a => a.id !== article.id).slice(0, 3);
+    // Get related from all categories this article belongs to
+    const articleCats = Array.isArray(article.categories) && article.categories.length > 0
+      ? article.categories : [article.category];
+    const allPublished = await db.getArticles({ status: 'published' });
+    const related = allPublished
+      .filter(a => a.id !== article.id && articleCats.some(cat =>
+        a.category === cat || (Array.isArray(a.categories) && a.categories.includes(cat))
+      )).slice(0, 3);
     res.render('article', {
       article, related,
       categories: ALL_CATEGORIES,
@@ -125,7 +134,8 @@ router.get('/search', async (req, res) => {
       a.title?.toLowerCase().includes(q) ||
       a.excerpt?.toLowerCase().includes(q) ||
       a.content?.toLowerCase().includes(q) ||
-      a.category?.toLowerCase().includes(q)
+      a.category?.toLowerCase().includes(q) ||
+      (Array.isArray(a.categories) && a.categories.some(c => c.toLowerCase().includes(q)))
     ) : [];
     res.render('search', {
       results, q,

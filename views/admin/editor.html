@@ -75,7 +75,8 @@
                 <button type="button" class="toolbar-btn" onclick="fmtBlock('blockquote')" title="Quote">❝</button>
                 <div class="toolbar-sep"></div>
                 <button type="button" class="toolbar-btn" onclick="insertLink()" title="Link">🔗</button>
-                <button type="button" class="toolbar-btn" onclick="insertImage()" title="Insert Image">🖼</button>
+                <button type="button" class="toolbar-btn" onclick="showImageModal()" title="Insert Image">🖼 Image</button>
+                <button type="button" class="toolbar-btn" onclick="showVideoModal()" title="Insert Video">▶ Video</button>
                 <div class="toolbar-sep"></div>
                 <button type="button" class="toolbar-btn" onclick="fmt('undo')">↩</button>
                 <button type="button" class="toolbar-btn" onclick="fmt('redo')">↪</button>
@@ -289,5 +290,232 @@ if (saved) {
 }
 <% } %>
 </script>
+<!-- Image Insert Modal -->
+<div id="image-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;width:480px;max-width:95vw;padding:28px;position:relative">
+    <button onclick="closeModal('image-modal')" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888">✕</button>
+    <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:20px">Insert Image</div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">
+      <button onclick="switchImgTab('url')" id="tab-url" style="padding:8px 20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--ink)">By URL</button>
+      <button onclick="switchImgTab('upload')" id="tab-upload" style="padding:8px 20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)">Upload from PC</button>
+    </div>
+
+    <!-- URL tab -->
+    <div id="img-url-panel">
+      <label class="form-label">Image URL</label>
+      <input type="text" id="img-url-input" class="form-control" placeholder="https://example.com/image.jpg" style="margin-bottom:12px">
+      <label class="form-label">Alt Text (optional)</label>
+      <input type="text" id="img-alt-input" class="form-control" placeholder="Describe the image..." style="margin-bottom:16px">
+      <button onclick="insertImageFromUrl()" class="btn btn-accent" style="width:100%">Insert Image</button>
+    </div>
+
+    <!-- Upload tab -->
+    <div id="img-upload-panel" style="display:none">
+      <div style="border:2px dashed var(--border);padding:32px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('inline-img-input').click()">
+        <div style="font-size:2rem;margin-bottom:8px">🖼</div>
+        <p style="font-size:0.82rem;color:var(--muted)">Click to select image from your PC</p>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">JPG, PNG, WEBP</p>
+      </div>
+      <input type="file" id="inline-img-input" accept="image/*" style="display:none" onchange="uploadInlineImage(this)">
+      <div id="img-upload-status" style="font-size:0.82rem;color:var(--muted);text-align:center"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Video Insert Modal -->
+<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;width:480px;max-width:95vw;padding:28px;position:relative">
+    <button onclick="closeModal('video-modal')" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888">✕</button>
+    <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:20px">Insert Video</div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">
+      <button onclick="switchVidTab('twitter')" id="vtab-twitter" style="padding:8px 16px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--ink)">Twitter/X</button>
+      <button onclick="switchVidTab('youtube')" id="vtab-youtube" style="padding:8px 16px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)">YouTube</button>
+      <button onclick="switchVidTab('upload')" id="vtab-upload" style="padding:8px 16px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)">Upload from PC</button>
+    </div>
+
+    <!-- Twitter/X tab -->
+    <div id="vid-twitter-panel">
+      <label class="form-label">Twitter/X Post URL</label>
+      <input type="text" id="twitter-url-input" class="form-control" placeholder="https://x.com/user/status/123456..." style="margin-bottom:8px">
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px">Paste the full URL of the tweet/post</p>
+      <button onclick="insertTwitterEmbed()" class="btn btn-accent" style="width:100%">Embed Post</button>
+    </div>
+
+    <!-- YouTube tab -->
+    <div id="vid-youtube-panel" style="display:none">
+      <label class="form-label">YouTube Video URL</label>
+      <input type="text" id="youtube-url-input" class="form-control" placeholder="https://www.youtube.com/watch?v=..." style="margin-bottom:8px">
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px">Paste the full YouTube video URL</p>
+      <button onclick="insertYoutubeEmbed()" class="btn btn-accent" style="width:100%">Embed Video</button>
+    </div>
+
+    <!-- Upload tab -->
+    <div id="vid-upload-panel" style="display:none">
+      <div style="border:2px dashed var(--border);padding:32px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('inline-vid-input').click()">
+        <div style="font-size:2rem;margin-bottom:8px">🎬</div>
+        <p style="font-size:0.82rem;color:var(--muted)">Click to select video from your PC</p>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">MP4, MOV, WEBM (max 50MB)</p>
+      </div>
+      <input type="file" id="inline-vid-input" accept="video/*" style="display:none" onchange="uploadInlineVideo(this)">
+      <div id="vid-upload-status" style="font-size:0.82rem;color:var(--muted);text-align:center;padding:8px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── MODAL HELPERS ──
+function showImageModal() {
+  document.getElementById('image-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('img-url-input').focus(), 100);
+}
+function showVideoModal() {
+  document.getElementById('video-modal').style.display = 'flex';
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+// Close on backdrop click
+document.getElementById('image-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('image-modal'); });
+document.getElementById('video-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('video-modal'); });
+
+// ── IMAGE TABS ──
+function switchImgTab(tab) {
+  document.getElementById('img-url-panel').style.display = tab==='url' ? 'block' : 'none';
+  document.getElementById('img-upload-panel').style.display = tab==='upload' ? 'block' : 'none';
+  document.getElementById('tab-url').style.borderBottomColor = tab==='url' ? 'var(--accent)' : 'transparent';
+  document.getElementById('tab-url').style.color = tab==='url' ? 'var(--ink)' : 'var(--muted)';
+  document.getElementById('tab-upload').style.borderBottomColor = tab==='upload' ? 'var(--accent)' : 'transparent';
+  document.getElementById('tab-upload').style.color = tab==='upload' ? 'var(--ink)' : 'var(--muted)';
+}
+
+// Insert image from URL
+function insertImageFromUrl() {
+  const url = document.getElementById('img-url-input').value.trim();
+  const alt = document.getElementById('img-alt-input').value.trim() || 'Image';
+  if (!url) { alert('Please enter an image URL'); return; }
+  const editor = document.getElementById('content-editor');
+  editor.focus();
+  const html = `<figure style="margin:1.5em 0"><img src="${url}" alt="${alt}" style="max-width:100%;height:auto;display:block"><figcaption style="font-size:0.8rem;color:#888;margin-top:6px;text-align:center">${alt}</figcaption></figure>`;
+  document.execCommand('insertHTML', false, html);
+  document.getElementById('img-url-input').value = '';
+  document.getElementById('img-alt-input').value = '';
+  closeModal('image-modal');
+}
+
+// Upload image from PC and insert
+async function uploadInlineImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const status = document.getElementById('img-upload-status');
+  status.textContent = '⏳ Uploading...';
+  const formData = new FormData();
+  formData.append('image', input.files[0]);
+  try {
+    const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.url) {
+      const editor = document.getElementById('content-editor');
+      editor.focus();
+      const html = `<figure style="margin:1.5em 0"><img src="${data.url}" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure>`;
+      document.execCommand('insertHTML', false, html);
+      status.textContent = '✅ Image inserted!';
+      setTimeout(() => { closeModal('image-modal'); status.textContent = ''; input.value=''; }, 1000);
+    } else {
+      status.textContent = '❌ Upload failed. Try again.';
+    }
+  } catch(e) {
+    status.textContent = '❌ Error: ' + e.message;
+  }
+}
+
+// ── VIDEO TABS ──
+function switchVidTab(tab) {
+  ['twitter','youtube','upload'].forEach(t => {
+    document.getElementById('vid-'+t+'-panel').style.display = t===tab ? 'block' : 'none';
+    document.getElementById('vtab-'+t).style.borderBottomColor = t===tab ? 'var(--accent)' : 'transparent';
+    document.getElementById('vtab-'+t).style.color = t===tab ? 'var(--ink)' : 'var(--muted)';
+  });
+}
+
+// Insert Twitter/X embed
+function insertTwitterEmbed() {
+  const url = document.getElementById('twitter-url-input').value.trim();
+  if (!url || !url.includes('x.com') && !url.includes('twitter.com')) {
+    alert('Please enter a valid Twitter/X URL'); return;
+  }
+  const editor = document.getElementById('content-editor');
+  editor.focus();
+  const html = `<div class="twitter-embed" style="margin:1.5em 0;border:1px solid #e0e0e0;padding:16px;background:#f9f9f9;border-radius:4px">
+    <p style="font-size:0.85rem;color:#555;margin-bottom:8px">🐦 Embedded Post from Twitter/X:</p>
+    <a href="${url}" target="_blank" rel="noopener" style="color:var(--accent);font-size:0.9rem;word-break:break-all">${url}</a>
+    <script async src="https://platform.twitter.com/widgets.js"><\/script>
+    <blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>
+  </div>`;
+  document.execCommand('insertHTML', false, html);
+  document.getElementById('twitter-url-input').value = '';
+  closeModal('video-modal');
+}
+
+// Insert YouTube embed
+function insertYoutubeEmbed() {
+  const url = document.getElementById('youtube-url-input').value.trim();
+  if (!url) { alert('Please enter a YouTube URL'); return; }
+  // Extract video ID
+  let videoId = '';
+  const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (match) videoId = match[1];
+  if (!videoId) { alert('Could not extract YouTube video ID. Check the URL.'); return; }
+  const editor = document.getElementById('content-editor');
+  editor.focus();
+  const html = `<div style="margin:1.5em 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden">
+    <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen
+      style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>
+  </div>`;
+  document.execCommand('insertHTML', false, html);
+  document.getElementById('youtube-url-input').value = '';
+  closeModal('video-modal');
+}
+
+// Upload video from PC
+async function uploadInlineVideo(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const status = document.getElementById('vid-upload-status');
+
+  if (file.size > 50 * 1024 * 1024) {
+    status.textContent = '❌ File too large. Max 50MB.'; return;
+  }
+
+  status.textContent = '⏳ Uploading video... this may take a moment';
+  const formData = new FormData();
+  formData.append('image', file); // reuse upload endpoint
+
+  try {
+    const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.url) {
+      const editor = document.getElementById('content-editor');
+      editor.focus();
+      const html = `<div style="margin:1.5em 0">
+        <video controls style="max-width:100%;height:auto;display:block">
+          <source src="${data.url}" type="${file.type}">
+          Your browser does not support the video tag.
+        </video>
+      </div>`;
+      document.execCommand('insertHTML', false, html);
+      status.textContent = '✅ Video inserted!';
+      setTimeout(() => { closeModal('video-modal'); status.textContent=''; input.value=''; }, 1000);
+    } else {
+      status.textContent = '❌ Upload failed: ' + (data.error || 'Unknown error');
+    }
+  } catch(e) {
+    status.textContent = '❌ Error: ' + e.message;
+  }
+}
+</script>
+
 </body>
 </html>

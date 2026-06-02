@@ -8,13 +8,13 @@ const useCloudinary = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDI
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for videos
   fileFilter: (req, file, cb) => {
-    // Accept all image mimetypes broadly
-    if (file.mimetype.startsWith('image/')) {
+    // Accept images and videos
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files allowed'));
+      cb(new Error('Only image and video files allowed'));
     }
   }
 });
@@ -34,11 +34,11 @@ async function saveFile(file) {
 
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        {
+        (req, file) => ({
           folder: 'thenewsroom',
-          resource_type: 'image',
-          transformation: [{ width: 1200, crop: 'limit', quality: 'auto:good' }]
-        },
+          resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
+          transformation: file.mimetype.startsWith('video/') ? [] : [{ width: 1200, crop: 'limit', quality: 'auto:good' }]
+        }),
         (error, result) => {
           if (error) {
             console.error('Cloudinary error:', error);
