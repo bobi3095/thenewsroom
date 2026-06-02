@@ -22,6 +22,24 @@
   <meta name="twitter:description" content="Independent journalism covering Politics, India, World News and the stories mainstream media won't touch.">
 
   <link rel="canonical" href="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>">
+
+  <!-- JSON-LD for Homepage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "NewsMediaOrganization",
+    "name": "The News Room",
+    "url": "<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>",
+    "logo": "<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>/images/logo.jpg",
+    "description": "Independent journalism covering Politics, India, World News and the stories mainstream media won't touch.",
+    "sameAs": [
+      "https://x.com/TheNewsroom_tnr",
+      "https://www.instagram.com/_thenewsroom/",
+      "https://www.youtube.com/@thenewsroom_1"
+    ]
+  }
+  </script>
+
   <link rel="stylesheet" href="/css/style.css">
   <style>
     /* ── HERO GRID (your wireframe) ── */
