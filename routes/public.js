@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { cacheMiddleware, KEYS } = require('../middleware/cache');
 
 // All categories including new ones
 const ALL_CATEGORIES = ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered', 'Opinion', 'India', 'Data', 'Law', 'Govt Schemes', 'Education'];
@@ -30,7 +31,7 @@ function getLatest6hrs(articles) {
 }
 
 // Homepage
-router.get('/', async (req, res) => {
+router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
   try {
     const articles = await db.getArticles({ status: 'published' });
 
@@ -87,7 +88,7 @@ router.get('/latest', async (req, res) => {
 });
 
 // Category page
-router.get('/category/:slug', async (req, res) => {
+router.get('/category/:slug', cacheMiddleware(req => KEYS.category(req.params.slug), 180), async (req, res) => {
   try {
     const category = catMap[req.params.slug] || req.params.slug;
     const articles = await db.getArticles({ status: 'published', category });
@@ -102,7 +103,7 @@ router.get('/category/:slug', async (req, res) => {
 });
 
 // Article page
-router.get('/article/:slug', async (req, res) => {
+router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug), 600), async (req, res) => {
   try {
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
@@ -148,7 +149,7 @@ router.get('/search', async (req, res) => {
 });
 
 // ── MORE PAGE ────────────────────────────────────────────────────
-router.get('/more', async (req, res) => {
+router.get('/more', cacheMiddleware(KEYS.more, 180), async (req, res) => {
   try {
     const articles = await db.getArticles({ status: 'published' });
     res.render('more', {

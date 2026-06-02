@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 const { authMiddleware, adminOnly, JWT_SECRET } = require('../middleware/auth');
 const { upload, saveFile, deleteFile } = require('../middleware/upload');
+const { clearCache, clearArticleCache, getCacheStats } = require('../middleware/cache');
 
 const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -112,6 +113,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), async (req
         image: imageUrl || ''
       });
     }
+    clearCache(); // Clear all cache so new article appears immediately
     res.redirect('/admin');
   } catch(err) {
     console.error('Save article error:', err);
@@ -123,6 +125,7 @@ router.post('/articles/delete/:id', authMiddleware, async (req, res) => {
   const article = await db.getArticle({ id: parseInt(req.params.id) });
   if (req.user.role !== 'admin' && article?.authorId !== req.user.id) return res.redirect('/admin');
   await db.deleteArticle(parseInt(req.params.id));
+  clearCache(); // Clear cache after deletion
   res.redirect('/admin');
 });
 
@@ -217,6 +220,12 @@ router.post('/profile/update', authMiddleware, upload.single('avatar'), async (r
     console.error('Profile update error:', err);
     res.status(500).send('Error updating profile: ' + err.message);
   }
+});
+
+// ── CACHE MANAGEMENT ─────────────────────────────────────────────
+router.post('/cache/clear', authMiddleware, adminOnly, (req, res) => {
+  clearCache();
+  res.redirect('/admin');
 });
 
 // ── IMAGE UPLOAD (editor) ─────────────────────────────────────────

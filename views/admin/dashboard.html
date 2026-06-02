@@ -20,6 +20,22 @@
     </div>
 
     <div class="admin-content">
+      <!-- Cache Stats Bar -->
+      <div style="background:var(--black);color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-size:0.78rem">
+        <div style="display:flex;gap:24px;align-items:center">
+          <span style="color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;font-size:0.65rem">Cache Status</span>
+          <span>⚡ <strong style="color:#4ade80"><%= cacheStats.hitRate %></strong> hit rate</span>
+          <span>📦 <strong><%= cacheStats.keys %></strong> cached pages</span>
+          <span>✅ <strong><%= cacheStats.hits %></strong> hits</span>
+          <span>❌ <strong><%= cacheStats.misses %></strong> misses</span>
+        </div>
+        <form method="POST" action="/admin/cache/clear" style="display:inline">
+          <button type="submit" class="btn btn-outline btn-sm" style="color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.2);font-size:0.65rem">
+            🗑 Clear Cache
+          </button>
+        </form>
+      </div>
+
       <!-- Stats -->
       <div class="stats-grid">
         <div class="stat-card">
