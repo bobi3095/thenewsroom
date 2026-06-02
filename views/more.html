@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="msvalidate.01" content="B9D530FDBCBAEEA62AA94C9F63F8E39C">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>More Sections — The News Room</title>
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main style="padding:48px 0 80px">
+  <div class="container">
+
+    <div style="margin-bottom:32px;padding-bottom:16px;border-bottom:2px solid var(--ink)">
+      <h1 style="font-family:var(--serif);font-size:2rem;font-weight:900;color:var(--ink)">More Sections</h1>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:48px">
+      <% const moreSections = [
+        { name: 'Data', slug: 'data', icon: '📊', desc: 'Data-driven journalism and analysis' },
+        { name: 'Sports', slug: 'sports', icon: '⚽', desc: 'Cricket, football and all sports news' },
+        { name: 'Law', slug: 'law', icon: '⚖️', desc: 'Legal news, court verdicts and policy' },
+        { name: 'Govt Schemes', slug: 'govt-schemes', icon: '🏛', desc: 'Government schemes and welfare programmes' },
+        { name: 'Education', slug: 'education', icon: '📚', desc: 'Education news, exams and policy' },
+        { name: 'Technology', slug: 'technology', icon: '💻', desc: 'Tech news, startups and innovation' }
+      ]; %>
+      <% moreSections.forEach(s => { %>
+      <a href="/category/<%= s.slug %>" style="display:block;background:var(--card-bg);padding:28px;border-top:3px solid var(--accent);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='translateY(0)'">
+        <div style="font-size:2.2rem;margin-bottom:12px"><%= s.icon %></div>
+        <div style="font-family:var(--serif);font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:6px"><%= s.name %></div>
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.5"><%= s.desc %></p>
+        <div style="margin-top:14px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent)">Read More →</div>
+      </a>
+      <% }) %>
+    </div>
+
+    <!-- Latest from each More category -->
+    <% moreCategories.forEach(cat => { %>
+      <% const catArticles = articles.filter(a => a.status === 'published' && (a.category === cat || (a.categories && a.categories.includes(cat)))).slice(0,3); %>
+      <% if (catArticles.length > 0) { %>
+      <div style="margin-bottom:40px">
+        <div class="section-header">
+          <h2 class="section-title"><%= cat %></h2>
+          <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="section-link">More →</a>
+        </div>
+        <div class="article-grid" style="grid-template-columns:repeat(3,1fr)">
+          <% catArticles.forEach(a => { %>
+          <a href="/article/<%= a.slug %>" class="article-card">
+            <div class="card-image">
+              <% if (a.image) { %><img src="<%= a.image %>" alt="<%= a.title %>"><% } else { %><div class="card-image-placeholder">📰</div><% } %>
+            </div>
+            <div class="card-content">
+              <div class="card-category"><%= a.category %></div>
+              <div class="card-title"><%= a.title %></div>
+              <div class="card-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %></div>
+            </div>
+          </a>
+          <% }) %>
+        </div>
+      </div>
+      <% } %>
+    <% }) %>
+
+  </div>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

@@ -137,6 +137,34 @@ router.get('/search', async (req, res) => {
   } catch(e) { console.error(e); res.status(500).send('Server error'); }
 });
 
+// ── MORE PAGE ────────────────────────────────────────────────────
+router.get('/more', async (req, res) => {
+  try {
+    const articles = await db.getArticles({ status: 'published' });
+    res.render('more', {
+      articles, categories: ALL_CATEGORIES,
+      navCategories: NAV_CATEGORIES,
+      moreCategories: MORE_CATEGORIES,
+      page: 'more'
+    });
+  } catch(e) { console.error(e); res.status(500).send('Server error'); }
+});
+
+// ── STATIC PAGES ─────────────────────────────────────────────────
+router.get('/editorial-policy', (req, res) => {
+  res.render('editorial-policy', {
+    categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES,
+    moreCategories: MORE_CATEGORIES, page: 'editorial-policy'
+  });
+});
+
+router.get('/contact', (req, res) => {
+  res.render('contact', {
+    categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES,
+    moreCategories: MORE_CATEGORIES, page: 'contact'
+  });
+});
+
 // ── SITEMAP ───────────────────────────────────────────────────────
 router.get('/sitemap.xml', async (req, res) => {
   try {

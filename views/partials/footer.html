@@ -3,26 +3,52 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="wordmark">The News Room</div>
-        <p>Independent journalism covering the stories that matter — and the ones mainstream media won't touch. Politics, Technology, Sports, World News and beyond.</p>
+        <p>Independent journalism covering the stories that matter — and the ones mainstream media won't touch. Politics, India, World News and beyond.</p>
+        <!-- Social Links -->
+        <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
+          <a href="https://x.com/TheNewsroom_tnr" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.15);padding:6px 12px;transition:all 0.2s"
+            onmouseover="this.style.color='white';this.style.borderColor='white'"
+            onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.15)'">
+            𝕏 Twitter
+          </a>
+          <a href="https://www.instagram.com/_thenewsroom/" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.15);padding:6px 12px;transition:all 0.2s"
+            onmouseover="this.style.color='white';this.style.borderColor='white'"
+            onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.15)'">
+            📷 Instagram
+          </a>
+          <a href="https://www.youtube.com/@thenewsroom_1" target="_blank" rel="noopener"
+            style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.15);padding:6px 12px;transition:all 0.2s"
+            onmouseover="this.style.color='white';this.style.borderColor='white'"
+            onmouseout="this.style.color='rgba(255,255,255,0.5)';this.style.borderColor='rgba(255,255,255,0.15)'">
+            ▶ YouTube
+          </a>
+        </div>
       </div>
       <div class="footer-col">
         <h4>Sections</h4>
-        <% categories.forEach(cat => { %>
-        <a href="/category/<%= cat.toLowerCase().replace(/ /g, '-') %>"><%= cat %></a>
-        <% }) %>
+        <a href="/latest">Latest News</a>
+        <a href="/category/india">India</a>
+        <a href="/category/politics">Politics</a>
+        <a href="/category/world-news">World News</a>
+        <a href="/category/uncovered">Uncovered</a>
+        <a href="/category/opinion">Opinion</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="/category/data">Data</a>
+        <a href="/category/sports">Sports</a>
+        <a href="/category/law">Law News</a>
+        <a href="/category/govt-schemes">Govt Schemes</a>
+        <a href="/category/education">Education</a>
+        <a href="/category/technology">Technology</a>
       </div>
       <div class="footer-col">
         <h4>About</h4>
-        <a href="#">Our Mission</a>
-        <a href="#">Editorial Policy</a>
-        <a href="#">Contact Us</a>
-        <a href="#">Tip Line</a>
-      </div>
-      <div class="footer-col">
-        <h4>Follow</h4>
-        <a href="#">Twitter / X</a>
-        <a href="#">Telegram</a>
-        <a href="#">Newsletter</a>
+        <a href="/editorial-policy">Editorial Policy</a>
+        <a href="/contact">Contact Us</a>
+        <a href="mailto:thenewsroom.tnr.in@gmail.com">thenewsroom.tnr.in@gmail.com</a>
         <a href="/admin" style="margin-top:12px;color:rgba(255,255,255,0.2);font-size:0.7rem">Admin</a>
       </div>
     </div>
