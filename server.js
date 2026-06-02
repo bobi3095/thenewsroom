@@ -11,6 +11,9 @@ const db = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust Render's proxy (required for rate limiting to work correctly)
+app.set('trust proxy', 1);
+
 // ── SECURITY HEADERS (Helmet) ──────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: false, // disabled to allow embedded videos/tweets

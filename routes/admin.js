@@ -46,7 +46,8 @@ router.get('/', authMiddleware, async (req, res) => {
       user: req.user,
       articles: myArticles,
       stats,
-      categories: db.categories
+      categories: db.categories,
+      cacheStats: getCacheStats()
     });
   }
 

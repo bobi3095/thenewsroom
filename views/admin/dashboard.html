@@ -21,6 +21,7 @@
 
     <div class="admin-content">
       <!-- Cache Stats Bar -->
+      <% if (typeof cacheStats !== 'undefined' && cacheStats) { %>
       <div style="background:var(--black);color:white;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-size:0.78rem">
         <div style="display:flex;gap:24px;align-items:center">
           <span style="color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;font-size:0.65rem">Cache Status</span>
@@ -35,6 +36,7 @@
           </button>
         </form>
       </div>
+      <% } %>
 
       <!-- Stats -->
       <div class="stats-grid">
