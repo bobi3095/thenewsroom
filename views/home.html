@@ -190,17 +190,72 @@
     @media (max-width: 1024px) {
       .hero-new-grid { grid-template-columns: 1fr; }
       .hero-bottom-grid { grid-template-columns: 1fr 1fr; }
-      .hero-left, .hero-right { display: none; }
       .todays-grid { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 640px) {
+      section[style*="padding: 24px"] {
+        padding-top: 14px !important;
+      }
+      section[style*="padding: 24px"] > div {
+        padding: 0 14px !important;
+      }
+      .hero-new-grid,
+      .hero-bottom-grid {
+        grid-template-columns: 1fr;
+        gap: 1px;
+      }
+      .hero-left,
+      .hero-right,
+      .hero-bottom-col {
+        display: block;
+        padding: 16px;
+      }
+      .hero-center > a > div:first-child,
+      .hero-center > div:first-child {
+        height: auto !important;
+        aspect-ratio: 16 / 10;
+      }
+      .hero-center h1 {
+        font-size: 1.28rem !important;
+        line-height: 1.24 !important;
+      }
+      .hero-center p {
+        font-size: 0.86rem !important;
+      }
+      .hero-center a > div:last-child {
+        padding: 16px !important;
+      }
+      .col-header {
+        margin: -16px -16px 12px -16px;
+        font-size: 0.62rem;
+        padding: 7px 10px;
+      }
+      .latest-panel-header {
+        margin: -16px -16px 0 -16px;
+        font-size: 0.62rem;
+        padding: 7px 10px;
+      }
+      .latest-item {
+        padding: 11px 0;
+      }
+      .latest-item-title,
+      .small-article-title {
+        font-size: 0.9rem;
+      }
+      .small-article {
+        gap: 9px;
+        padding: 9px 0;
+      }
+      .small-article-num {
+        width: 24px;
+        font-size: 1.2rem;
+      }
       .hero-bottom-grid { grid-template-columns: 1fr; }
       .todays-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <meta name="msvalidate.01" content="B9D530FDBCBAEEA62AA94C9F63F8E39C" />
 
 <%- include('partials/header.html') %>
 

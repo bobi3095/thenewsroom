@@ -28,9 +28,11 @@ body {
   color: var(--ink);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a { color: inherit; text-decoration: none; }
+img, video, iframe { max-width: 100%; }
 img { display: block; width: 100%; height: 100%; object-fit: cover; }
 button { cursor: pointer; font-family: var(--sans); }
 
@@ -807,6 +809,73 @@ button { cursor: pointer; font-family: var(--sans); }
 }
 
 @media (max-width: 640px) {
+  html { font-size: 15px; }
+  .site-header { position: sticky; }
+  .header-top {
+    height: auto;
+    min-height: 64px;
+    padding: 12px 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .site-logo {
+    flex: 1 1 auto;
+    min-width: 170px;
+  }
+  .site-logo .wordmark {
+    font-size: 1.25rem;
+    letter-spacing: 0;
+  }
+  .site-logo .tagline {
+    font-size: 0.52rem;
+  }
+  .header-search {
+    order: 3;
+    flex: 1 0 100%;
+    max-width: none;
+  }
+  .header-search input {
+    min-width: 0;
+    font-size: 0.82rem;
+    padding: 9px 11px;
+  }
+  .site-nav { overflow: hidden; }
+  .nav-inner {
+    padding: 0 10px;
+    gap: 2px;
+  }
+  .nav-inner a,
+  .nav-dropdown-trigger {
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    padding: 10px 9px;
+  }
+  .breaking-label {
+    font-size: 0.58rem;
+    padding: 7px 10px;
+  }
+  .ticker-items span {
+    font-size: 0.72rem;
+    padding-right: 28px;
+  }
+  .container {
+    padding: 0 14px;
+  }
+  .article-section {
+    padding: 28px 0;
+  }
+  .section-header {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+  .section-title {
+    font-size: 1.18rem;
+  }
+  .section-link {
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+  }
   .article-grid { grid-template-columns: 1fr; }
   .header-date { display: none; }
   .hero-title { font-size: 1.5rem; }
@@ -814,6 +883,119 @@ button { cursor: pointer; font-family: var(--sans); }
   .category-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .category-name { font-size: 2rem; }
+  .article-card {
+    min-width: 0;
+  }
+  .card-image {
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+  .card-content {
+    padding: 15px 16px 17px;
+  }
+  .card-title {
+    font-size: 1rem;
+  }
+  .list-article {
+    gap: 12px;
+    padding: 16px 0;
+  }
+  .list-image {
+    width: 104px;
+    height: 72px;
+  }
+  .article-page {
+    padding: 24px 0 44px;
+  }
+  .article-page-grid {
+    padding: 0 14px;
+    gap: 32px;
+  }
+  .article-header {
+    margin-bottom: 22px;
+  }
+  .article-headline {
+    font-size: 1.95rem;
+    line-height: 1.16;
+    letter-spacing: 0;
+  }
+  .article-deck {
+    font-size: 1rem;
+    padding-left: 12px;
+  }
+  .article-byline {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .article-cover {
+    height: auto;
+    aspect-ratio: 16 / 10;
+    margin-bottom: 24px;
+  }
+  .article-body {
+    font-size: 1rem;
+    line-height: 1.78;
+    overflow-wrap: anywhere;
+  }
+  .article-body h2 {
+    font-size: 1.35rem;
+  }
+  .article-body h3 {
+    font-size: 1.16rem;
+  }
+  .sidebar-widget {
+    margin-bottom: 28px;
+  }
+  .category-header {
+    padding: 28px 0;
+    margin-bottom: 28px;
+  }
+  .search-page {
+    padding: 24px 0 44px;
+  }
+  .search-bar-big {
+    padding: 24px 0;
+    margin-bottom: 28px;
+  }
+  .search-bar-big form {
+    max-width: none;
+  }
+  .search-bar-big input {
+    min-width: 0;
+    font-size: 1rem;
+    padding: 11px 12px;
+  }
+  .search-bar-big button {
+    padding: 11px 14px;
+  }
+  .site-footer {
+    padding: 36px 0 22px;
+    margin-top: 42px;
+  }
+  .footer-grid {
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .footer-bottom {
+    display: block;
+    line-height: 1.8;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-logo .wordmark { font-size: 1.15rem; }
+  .nav-inner a,
+  .nav-dropdown-trigger {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .article-headline {
+    font-size: 1.72rem;
+  }
+  .list-image {
+    width: 92px;
+    height: 66px;
+  }
 }
 
 /* ── PAGE TRANSITIONS ── */

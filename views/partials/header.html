@@ -97,6 +97,33 @@
   background: rgba(200,16,46,0.2);
   padding-left: 22px;
 }
+@media (max-width: 640px) {
+  .nav-dropdown {
+    position: static;
+  }
+  .nav-dropdown-trigger {
+    display: none;
+  }
+  .nav-dropdown-menu {
+    position: static;
+    display: flex;
+    min-width: auto;
+    background: transparent;
+    border-top: none;
+    box-shadow: none;
+  }
+  .nav-dropdown-menu a {
+    border-bottom: 2px solid transparent;
+    padding: 10px 9px;
+    font-size: 0.66rem;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .nav-dropdown-menu a:hover {
+    background: transparent;
+    padding-left: 9px;
+  }
+}
 </style>
 
 <script>
