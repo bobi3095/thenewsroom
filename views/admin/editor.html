@@ -367,12 +367,42 @@ if (saved) {
 </div>
 
 <script>
+// ── CURSOR POSITION SAVING ──
+let savedRange = null;
+
+function saveCursor() {
+  const editor = document.getElementById('content-editor');
+  editor.focus();
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0) {
+    savedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+
+function restoreAndInsert(html) {
+  const editor = document.getElementById('content-editor');
+  editor.focus();
+  if (savedRange) {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+    document.execCommand('insertHTML', false, html);
+    savedRange = null;
+  } else {
+    // Fallback: insert at end
+    editor.focus();
+    document.execCommand('insertHTML', false, html);
+  }
+}
+
 // ── MODAL HELPERS ──
 function showImageModal() {
+  saveCursor(); // Save cursor before opening modal
   document.getElementById('image-modal').style.display = 'flex';
   setTimeout(() => document.getElementById('img-url-input').focus(), 100);
 }
 function showVideoModal() {
+  saveCursor(); // Save cursor before opening modal
   document.getElementById('video-modal').style.display = 'flex';
 }
 function closeModal(id) {
@@ -397,13 +427,11 @@ function insertImageFromUrl() {
   const url = document.getElementById('img-url-input').value.trim();
   const alt = document.getElementById('img-alt-input').value.trim() || 'Image';
   if (!url) { alert('Please enter an image URL'); return; }
-  const editor = document.getElementById('content-editor');
-  editor.focus();
-  const html = `<figure style="margin:1.5em 0"><img src="${url}" alt="${alt}" style="max-width:100%;height:auto;display:block"><figcaption style="font-size:0.8rem;color:#888;margin-top:6px;text-align:center">${alt}</figcaption></figure>`;
-  document.execCommand('insertHTML', false, html);
+  const html = '<figure style="margin:1.5em 0"><img src="' + url + '" alt="' + alt + '" style="max-width:100%;height:auto;display:block"><figcaption style="font-size:0.8rem;color:#888;margin-top:6px;text-align:center">' + alt + '</figcaption></figure><p></p>';
+  closeModal('image-modal');
+  restoreAndInsert(html);
   document.getElementById('img-url-input').value = '';
   document.getElementById('img-alt-input').value = '';
-  closeModal('image-modal');
 }
 
 // Upload image from PC and insert
@@ -417,12 +445,9 @@ async function uploadInlineImage(input) {
     const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
     const data = await res.json();
     if (data.url) {
-      const editor = document.getElementById('content-editor');
-      editor.focus();
-      const html = `<figure style="margin:1.5em 0"><img src="${data.url}" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure>`;
-      document.execCommand('insertHTML', false, html);
+      const html = '<figure style="margin:1.5em 0"><img src="' + data.url + '" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure><p></p>';
       status.textContent = '✅ Image inserted!';
-      setTimeout(() => { closeModal('image-modal'); status.textContent = ''; input.value=''; }, 1000);
+      setTimeout(() => { closeModal('image-modal'); restoreAndInsert(html); status.textContent = ''; input.value=''; }, 500);
     } else {
       status.textContent = '❌ Upload failed. Try again.';
     }
@@ -446,17 +471,14 @@ function insertTwitterEmbed() {
   if (!url || !url.includes('x.com') && !url.includes('twitter.com')) {
     alert('Please enter a valid Twitter/X URL'); return;
   }
-  const editor = document.getElementById('content-editor');
-  editor.focus();
-  const html = `<div class="twitter-embed" style="margin:1.5em 0;border:1px solid #e0e0e0;padding:16px;background:#f9f9f9;border-radius:4px">
-    <p style="font-size:0.85rem;color:#555;margin-bottom:8px">🐦 Embedded Post from Twitter/X:</p>
-    <a href="${url}" target="_blank" rel="noopener" style="color:var(--accent);font-size:0.9rem;word-break:break-all">${url}</a>
-    <script async src="https://platform.twitter.com/widgets.js"><\/script>
-    <blockquote class="twitter-tweet"><a href="${url}"></a></blockquote>
-  </div>`;
-  document.execCommand('insertHTML', false, html);
-  document.getElementById('twitter-url-input').value = '';
+  const html = '<div style="margin:1.5em 0;border:1px solid #e0e0e0;padding:16px;background:#f9f9f9">'
+    + '<p style="font-size:0.82rem;color:#555;margin-bottom:8px">🐦 Twitter/X Post:</p>'
+    + '<a href="' + url + '" target="_blank" style="color:#c8102e;font-size:0.85rem;word-break:break-all">' + url + '</a>'
+    + '<blockquote class="twitter-tweet"><a href="' + url + '"></a></blockquote>'
+    + '</div><p></p>';
   closeModal('video-modal');
+  restoreAndInsert(html);
+  document.getElementById('twitter-url-input').value = '';
 }
 
 // Insert YouTube embed
@@ -468,15 +490,13 @@ function insertYoutubeEmbed() {
   const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (match) videoId = match[1];
   if (!videoId) { alert('Could not extract YouTube video ID. Check the URL.'); return; }
-  const editor = document.getElementById('content-editor');
-  editor.focus();
-  const html = `<div style="margin:1.5em 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden">
-    <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen
-      style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>
-  </div>`;
-  document.execCommand('insertHTML', false, html);
-  document.getElementById('youtube-url-input').value = '';
+  const html = '<div style="margin:1.5em 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden">'
+    + '<iframe src="https://www.youtube.com/embed/' + videoId + '" frameborder="0" allowfullscreen'
+    + ' style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>'
+    + '</div><p></p>';
   closeModal('video-modal');
+  restoreAndInsert(html);
+  document.getElementById('youtube-url-input').value = '';
 }
 
 // Upload video from PC
@@ -497,17 +517,11 @@ async function uploadInlineVideo(input) {
     const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
     const data = await res.json();
     if (data.url) {
-      const editor = document.getElementById('content-editor');
-      editor.focus();
-      const html = `<div style="margin:1.5em 0">
-        <video controls style="max-width:100%;height:auto;display:block">
-          <source src="${data.url}" type="${file.type}">
-          Your browser does not support the video tag.
-        </video>
-      </div>`;
-      document.execCommand('insertHTML', false, html);
+      const html = '<div style="margin:1.5em 0"><video controls style="max-width:100%;height:auto;display:block">'
+        + '<source src="' + data.url + '" type="' + file.type + '">'
+        + 'Your browser does not support the video tag.</video></div><p></p>';
       status.textContent = '✅ Video inserted!';
-      setTimeout(() => { closeModal('video-modal'); status.textContent=''; input.value=''; }, 1000);
+      setTimeout(() => { closeModal('video-modal'); restoreAndInsert(html); status.textContent=''; input.value=''; }, 500);
     } else {
       status.textContent = '❌ Upload failed: ' + (data.error || 'Unknown error');
     }
