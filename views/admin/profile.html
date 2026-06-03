@@ -53,6 +53,7 @@
           </div>
           <div style="padding:24px">
             <form method="POST" action="/admin/profile/update" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
               <div class="form-group" style="display:flex;align-items:center;gap:20px;margin-bottom:24px">
                 <div id="avatar-preview" style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid var(--border)">

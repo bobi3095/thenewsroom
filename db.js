@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
 const isPostgres = !!process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === 'production';
 
 let pool;
 if (isPostgres) {
@@ -55,7 +56,10 @@ async function initPostgres() {
   // Seed admin
   const { rows } = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
   if (rows.length === 0) {
-    const hash = bcrypt.hashSync('admin123', 10);
+    if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
+      throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');
+    }
+    const hash = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123', 10);
     await pool.query(
       'INSERT INTO users (username, password, name, role, bio, avatar) VALUES ($1,$2,$3,$4,$5,$6)',
       ['admin', hash, 'Admin', 'admin', 'Site administrator', '']
@@ -289,7 +293,10 @@ function initLowdb() {
   _lowdb = new Low(adapter, { users:[], articles:[], categories:['Politics','Technology','Sports','World News','Uncovered'] });
   _lowdb.read();
   if (!_lowdb.data.users?.length) {
-    _lowdb.data.users = [{ id:1, username:'admin', password:bcrypt.hashSync('admin123',10), name:'Admin', role:'admin', bio:'', avatar:'', createdAt:new Date().toISOString() }];
+    if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
+      throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');
+    }
+    _lowdb.data.users = [{ id:1, username:'admin', password: process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123',10), name:'Admin', role:'admin', bio:'', avatar:'', createdAt:new Date().toISOString() }];
     _lowdb.write();
   }
   if (!_lowdb.data.articles?.length) {

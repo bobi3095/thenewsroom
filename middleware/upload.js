@@ -1,20 +1,26 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 const useCloudinary = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+const allowedMimeTypes = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'video/mp4', 'video/webm', 'video/quicktime'
+]);
+const allowedExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.mp4', '.webm', '.mov']);
 
 // Always use memory storage — we handle saving ourselves
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB for videos
+  limits: { fileSize: 50 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => {
-    // Accept images and videos
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (allowedMimeTypes.has(file.mimetype) && allowedExtensions.has(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only image and video files allowed'));
+      cb(new Error('Only JPG, PNG, WebP, GIF, MP4, WebM, or MOV files are allowed'));
     }
   }
 });
@@ -34,11 +40,11 @@ async function saveFile(file) {
 
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
-        (req, file) => ({
+        {
           folder: 'thenewsroom',
           resource_type: file.mimetype.startsWith('video/') ? 'video' : 'image',
           transformation: file.mimetype.startsWith('video/') ? [] : [{ width: 1200, crop: 'limit', quality: 'auto:good' }]
-        }),
+        },
         (error, result) => {
           if (error) {
             console.error('Cloudinary error:', error);
@@ -57,7 +63,8 @@ async function saveFile(file) {
     // Save locally for dev
     const uploadDir = path.join(__dirname, '../public/uploads');
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    const filename = Date.now() + path.extname(file.originalname);
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
     const filepath = path.join(uploadDir, filename);
     fs.writeFileSync(filepath, file.buffer);
     console.log('💾 Local upload:', filename);

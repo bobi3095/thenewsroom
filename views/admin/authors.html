@@ -58,6 +58,7 @@
                 <div style="display:flex;gap:6px">
                   <a href="/admin/authors/edit/<%= a.id %>" class="btn btn-icon btn-sm">Edit</a>
                   <form method="POST" action="/admin/authors/delete/<%= a.id %>" onsubmit="return confirm('Delete this author? Their articles will remain.')" style="display:inline">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                   </form>
                 </div>

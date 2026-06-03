@@ -7,25 +7,20 @@ const compression = require('compression');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
+const { securityHeaders, csrfToken, sameOriginPost } = require('./middleware/security');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust Render's proxy (required for rate limiting to work correctly)
 app.set('trust proxy', 1);
 
-// ── SECURITY HEADERS (Helmet) ──────────────────────────────────
 app.use(helmet({
-  contentSecurityPolicy: false, // disabled to allow embedded videos/tweets
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
-
-// ── COMPRESSION (Gzip) ─────────────────────────────────────────
-// Compresses all responses - reduces bandwidth by 70%
+app.use(securityHeaders);
 app.use(compression());
 
-// ── RATE LIMITING ──────────────────────────────────────────────
-// Public pages: 200 requests per minute per IP
 const publicLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 200,
@@ -34,40 +29,26 @@ const publicLimiter = rateLimit({
   legacyHeaders: false
 });
 
-// Login: 10 attempts per 15 minutes per IP (brute force protection)
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: 'Too many login attempts. Please try again after 15 minutes.',
-  standardHeaders: true,
-  legacyHeaders: false
-});
-
-// Apply limiters
-app.use('/admin/login', loginLimiter);
 app.use('/', publicLimiter);
 
-// ── VIEW ENGINE ────────────────────────────────────────────────
 app.engine('html', ejs.renderFile);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'html');
 
-// ── MIDDLEWARE ─────────────────────────────────────────────────
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '250kb' }));
+app.use(express.urlencoded({ extended: true, limit: '250kb' }));
 app.use(cookieParser());
+app.use(csrfToken);
+app.use(sameOriginPost);
 
-// Static files with cache headers (1 day for CSS/JS/images)
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1d',
   etag: true
 }));
 
-// ── ROUTES ─────────────────────────────────────────────────────
 app.use('/', require('./routes/public'));
 app.use('/admin', require('./routes/admin'));
 
-// ── 404 ────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).render('404', {
     categories: db.categories,
@@ -77,22 +58,20 @@ app.use((req, res) => {
   });
 });
 
-// ── ERROR HANDLER ──────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).send('Something went wrong. Please try again.');
 });
 
-// ── START ──────────────────────────────────────────────────────
 db.init().then(() => {
   app.listen(PORT, () => {
-    console.log(`\n🗞️  The News Room is live at http://localhost:${PORT}`);
-    console.log(`   Admin: http://localhost:${PORT}/admin`);
-    console.log(`   ⚡ Compression: enabled`);
-    console.log(`   🔒 Security headers: enabled`);
-    console.log(`   🚦 Rate limiting: enabled\n`);
+    console.log(`\nThe News Room is live at http://localhost:${PORT}`);
+    console.log(`Admin: http://localhost:${PORT}/admin`);
+    console.log('Compression: enabled');
+    console.log('Security headers: enabled');
+    console.log('Rate limiting: enabled\n');
   });
 }).catch(err => {
-  console.error('❌ DB init failed:', err);
+  console.error('DB init failed:', err);
   process.exit(1);
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { cacheMiddleware, KEYS } = require('../middleware/cache');
+const { sanitizeArticleHtml } = require('../middleware/sanitize');
 
 // All categories including new ones
 const ALL_CATEGORIES = ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered', 'Opinion', 'India', 'Data', 'Law', 'Govt Schemes', 'Education'];
@@ -107,6 +108,7 @@ router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug
   try {
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
+    article.content = sanitizeArticleHtml(article.content);
     await db.incrementViews(article.id);
     // Get related from all categories this article belongs to
     const articleCats = Array.isArray(article.categories) && article.categories.length > 0

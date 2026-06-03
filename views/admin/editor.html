@@ -29,6 +29,7 @@
 
     <div class="admin-content">
       <form method="POST" action="/admin/articles/save" enctype="multipart/form-data" id="article-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <% if (article) { %>
           <input type="hidden" name="id" value="<%= article.id %>">
         <% } %>
