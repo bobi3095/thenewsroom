@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const isPostgres = !!process.env.DATABASE_URL;
 const isProduction = process.env.NODE_ENV === 'production';
@@ -42,6 +43,17 @@ async function initPostgres() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS public_users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      verified BOOLEAN DEFAULT false,
+      verification_token TEXT,
+      verification_expires TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   // Add new columns if upgrading from old schema
@@ -51,6 +63,11 @@ async function initPostgres() {
   `).catch(() => {});
   await pool.query(`
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}';
+  `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_token TEXT;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ;
   `).catch(() => {});
 
   // Seed admin
@@ -254,6 +271,107 @@ const db = {
     }
   },
 
+  async getPublicUserByEmail(email) {
+    const normalized = normalizeEmail(email);
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT * FROM public_users WHERE email=$1', [normalized]);
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.publicUsers || []).find(u => u.email === normalized) || null;
+  },
+
+  async getPublicUserById(id) {
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT * FROM public_users WHERE id=$1', [id]);
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.publicUsers || []).find(u => u.id === id) || null;
+  },
+
+  async getPublicUserByVerificationToken(token) {
+    const tokenHash = hashToken(token);
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        'SELECT * FROM public_users WHERE verification_token=$1 AND verification_expires > NOW()',
+        [tokenHash]
+      );
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const now = Date.now();
+    return (lowdb.data.publicUsers || []).find(u =>
+      u.verificationToken === tokenHash &&
+      new Date(u.verificationExpires).getTime() > now
+    ) || null;
+  },
+
+  async createPublicUser(data) {
+    const normalized = normalizeEmail(data.email);
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        `INSERT INTO public_users (email,password,name,verified,verification_token,verification_expires)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+        [normalized, data.password, data.name, false, data.verificationToken, data.verificationExpires]
+      );
+      return pgToPublicUser(rows[0]);
+    }
+    const lowdb = getLowdb();
+    lowdb.data.publicUsers ||= [];
+    const id = Math.max(0, ...lowdb.data.publicUsers.map(u => u.id)) + 1;
+    const user = {
+      id,
+      email: normalized,
+      password: data.password,
+      name: data.name,
+      verified: false,
+      verificationToken: data.verificationToken,
+      verificationExpires: data.verificationExpires,
+      createdAt: new Date().toISOString()
+    };
+    lowdb.data.publicUsers.push(user);
+    lowdb.write();
+    return user;
+  },
+
+  async setPublicUserVerificationToken(id, tokenHash, expiresAt) {
+    if (isPostgres) {
+      await pool.query(
+        'UPDATE public_users SET verification_token=$1, verification_expires=$2 WHERE id=$3',
+        [tokenHash, expiresAt, id]
+      );
+      return;
+    }
+    const lowdb = getLowdb();
+    const user = (lowdb.data.publicUsers || []).find(u => u.id === id);
+    if (user) {
+      user.verificationToken = tokenHash;
+      user.verificationExpires = expiresAt;
+      lowdb.write();
+    }
+  },
+
+  async verifyPublicUser(id) {
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        `UPDATE public_users
+         SET verified=true, verification_token=NULL, verification_expires=NULL
+         WHERE id=$1 RETURNING *`,
+        [id]
+      );
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const user = (lowdb.data.publicUsers || []).find(u => u.id === id);
+    if (!user) return null;
+    user.verified = true;
+    user.verificationToken = null;
+    user.verificationExpires = null;
+    lowdb.write();
+    return user;
+  },
+
   async init() {
     if (isPostgres) await initPostgres();
     else initLowdb();
@@ -281,6 +399,27 @@ function pgToUser(row) {
   };
 }
 
+function pgToPublicUser(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    password: row.password,
+    name: row.name,
+    verified: row.verified,
+    verificationToken: row.verification_token,
+    verificationExpires: row.verification_expires,
+    createdAt: row.created_at
+  };
+}
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function hashToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
 let _lowdb;
 function getLowdb() { return _lowdb; }
 function initLowdb() {
@@ -290,8 +429,9 @@ function initLowdb() {
   const dataDir = path.join(__dirname, 'data');
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
   const adapter = new JSONFileSync(path.join(dataDir, 'db.json'));
-  _lowdb = new Low(adapter, { users:[], articles:[], categories:['Politics','Technology','Sports','World News','Uncovered'] });
+  _lowdb = new Low(adapter, { users:[], publicUsers:[], articles:[], categories:['Politics','Technology','Sports','World News','Uncovered'] });
   _lowdb.read();
+  _lowdb.data.publicUsers ||= [];
   if (!_lowdb.data.users?.length) {
     if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
       throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');

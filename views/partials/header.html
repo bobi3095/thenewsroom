@@ -13,6 +13,14 @@
       </form>
     </div>
     <div class="header-date" id="header-date"></div>
+    <div class="header-account">
+      <% if (currentUser) { %>
+        <a href="/account"><%= currentUser.verified ? 'Account' : 'Verify Email' %></a>
+      <% } else { %>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+      <% } %>
+    </div>
   </div>
   <nav class="site-nav">
     <div class="nav-inner">
@@ -97,6 +105,26 @@
   background: rgba(200,16,46,0.2);
   padding-left: 22px;
 }
+.header-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.header-account a {
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.72);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 9px;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.header-account a:hover {
+  border-color: var(--accent);
+  color: white;
+}
 @media (max-width: 640px) {
   .nav-dropdown {
     position: static;
@@ -122,6 +150,15 @@
   .nav-dropdown-menu a:hover {
     background: transparent;
     padding-left: 9px;
+  }
+  .header-account {
+    margin-left: auto;
+    gap: 5px;
+  }
+  .header-account a {
+    font-size: 0.58rem;
+    padding: 5px 7px;
+    letter-spacing: 0.04em;
   }
 }
 </style>

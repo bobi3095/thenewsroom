@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const db = require('./db');
 const { securityHeaders, csrfToken, sameOriginPost } = require('./middleware/security');
+const { publicUserLocals } = require('./middleware/publicAuth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,12 +41,14 @@ app.use(express.urlencoded({ extended: true, limit: '250kb' }));
 app.use(cookieParser());
 app.use(csrfToken);
 app.use(sameOriginPost);
+app.use(publicUserLocals);
 
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1d',
   etag: true
 }));
 
+app.use('/', require('./routes/user'));
 app.use('/', require('./routes/public'));
 app.use('/admin', require('./routes/admin'));
 

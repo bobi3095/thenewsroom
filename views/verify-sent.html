@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Verify Email - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="auth-page">
+  <section class="auth-panel">
+    <div class="auth-kicker">Verification</div>
+    <h1>Check Your Email</h1>
+    <p class="auth-copy">We generated a verification link for <strong><%= email %></strong>. The link expires in 24 hours.</p>
+
+    <% if (verificationUrl) { %>
+      <div class="auth-dev-link">
+        <span>Development verification link</span>
+        <a href="<%= verificationUrl %>"><%= verificationUrl %></a>
+      </div>
+    <% } %>
+
+    <p class="auth-switch"><a href="/account">Go to account</a></p>
+  </section>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

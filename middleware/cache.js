@@ -20,8 +20,8 @@ const KEYS = {
 // Middleware factory - caches rendered HTML
 function cacheMiddleware(keyFn, ttl = 120) {
   return (req, res, next) => {
-    // Never cache for admin users (they need fresh data)
-    if (req.cookies?.token) return next();
+    // Never cache for logged-in users (they need personalized header/account state)
+    if (req.cookies?.token || req.cookies?.userToken) return next();
 
     const key = typeof keyFn === 'function' ? keyFn(req) : keyFn;
     const cached = cache.get(key);

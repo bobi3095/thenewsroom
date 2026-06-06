@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Login - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="auth-page">
+  <section class="auth-panel">
+    <div class="auth-kicker">Reader Account</div>
+    <h1>Sign In</h1>
+    <p class="auth-copy">Use your email and password to access your reader account.</p>
+
+    <% if (error) { %>
+      <div class="auth-alert auth-alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/login" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>
+        <span>Email</span>
+        <input type="email" name="email" value="<%= form.email || '' %>" required autocomplete="email">
+      </label>
+      <label>
+        <span>Password</span>
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button type="submit">Sign In</button>
+    </form>
+
+    <p class="auth-switch">New here? <a href="/register">Create an account</a></p>
+  </section>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

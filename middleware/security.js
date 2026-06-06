@@ -70,7 +70,7 @@ function sameOriginPost(req, res, next) {
   next();
 }
 
-function createLoginRateLimiter({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
+function createLoginRateLimiter({ windowMs = 15 * 60 * 1000, max = 10, view = 'admin/login', viewData = {} } = {}) {
   const attempts = new Map();
   return (req, res, next) => {
     const key = req.ip || req.socket.remoteAddress || 'unknown';
@@ -83,7 +83,8 @@ function createLoginRateLimiter({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
     entry.count += 1;
     attempts.set(key, entry);
     if (entry.count > max) {
-      return res.status(429).render('admin/login', {
+      return res.status(429).render(view, {
+        ...viewData,
         error: 'Too many login attempts. Try again in a few minutes.'
       });
     }

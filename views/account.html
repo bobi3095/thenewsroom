@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>My Account - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="account-page">
+  <section class="account-panel">
+    <div>
+      <div class="auth-kicker">Reader Account</div>
+      <h1><%= user.name %></h1>
+      <p><%= user.email %></p>
+    </div>
+    <span class="account-status <%= user.verified ? 'is-verified' : 'is-pending' %>">
+      <%= user.verified ? 'Verified' : 'Email pending' %>
+    </span>
+  </section>
+
+  <% if (success) { %>
+    <div class="account-notice success"><%= success %></div>
+  <% } %>
+  <% if (warning) { %>
+    <div class="account-notice warning"><%= warning %></div>
+  <% } %>
+
+  <% if (!user.verified) { %>
+    <section class="account-card">
+      <h2>Verify your email</h2>
+      <p>Your account exists, but some reader features should stay locked until your email is verified.</p>
+      <form method="POST" action="/account/resend-verification">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit">Generate New Verification Link</button>
+      </form>
+    </section>
+  <% } %>
+
+  <section class="account-card">
+    <h2>Account Security</h2>
+    <p>Your login is protected with an HTTP-only cookie. Sign out when using a shared device.</p>
+    <a href="/logout" class="account-link">Sign out</a>
+  </section>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>
