@@ -48,6 +48,19 @@ app.use(express.static(path.join(__dirname, 'public'), {
   etag: true
 }));
 
+// Robots.txt
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /login
+Disallow: /register
+
+Sitemap: ${process.env.SITE_URL}/sitemap.xml`);
+});
+
 app.use('/', require('./routes/user'));
 app.use('/', require('./routes/public'));
 app.use('/admin', require('./routes/admin'));
