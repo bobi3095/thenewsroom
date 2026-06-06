@@ -11,6 +11,8 @@
   --bg: #f5f4f0;
   --card-bg: #ffffff;
   --tag-bg: #f0ede8;
+  --shadow-sm: 0 8px 24px rgba(10,10,10,0.06);
+  --shadow-md: 0 18px 50px rgba(10,10,10,0.1);
   --serif: 'Playfair Display', Georgia, serif;
   --body-serif: 'Source Serif 4', Georgia, serif;
   --sans: 'DM Sans', sans-serif;
@@ -397,10 +399,15 @@ button { cursor: pointer; font-family: var(--sans); }
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition);
+  border: 1px solid rgba(10,10,10,0.04);
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
-.article-card:hover { transform: translateY(-2px); }
+.article-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: rgba(200,16,46,0.16);
+}
 
 .card-image {
   height: 180px;
@@ -1023,7 +1030,7 @@ main { animation: fadeIn 0.3s ease; }
 .account-page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 48px 24px 24px;
+  padding: 56px 24px 24px;
 }
 
 .auth-panel,
@@ -1031,7 +1038,19 @@ main { animation: fadeIn 0.3s ease; }
 .account-card {
   background: var(--card-bg);
   border-top: 3px solid var(--accent);
-  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  padding: 32px;
+  position: relative;
+}
+
+.auth-panel::before,
+.account-panel::before,
+.account-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(10,10,10,0.06);
+  pointer-events: none;
 }
 
 .auth-panel h1,
@@ -1044,8 +1063,9 @@ main { animation: fadeIn 0.3s ease; }
 
 .auth-panel h1,
 .account-panel h1 {
-  font-size: 2rem;
+  font-size: 2.15rem;
   margin-bottom: 10px;
+  letter-spacing: 0;
 }
 
 .account-card h2 {
@@ -1066,14 +1086,14 @@ main { animation: fadeIn 0.3s ease; }
 .account-panel p,
 .account-card p {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.65;
 }
 
 .auth-form {
   display: grid;
-  gap: 14px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 26px;
 }
 
 .auth-form label {
@@ -1090,17 +1110,20 @@ main { animation: fadeIn 0.3s ease; }
 }
 
 .auth-form input {
-  background: white;
+  background: #fff;
   border: 1px solid var(--border);
   color: var(--ink);
   font-family: var(--sans);
   font-size: 0.95rem;
   outline: none;
-  padding: 12px 13px;
+  padding: 13px 14px;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
 .auth-form input:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,16,46,0.08);
+  background: #fffdfd;
 }
 
 .auth-form button,
@@ -1113,21 +1136,25 @@ main { animation: fadeIn 0.3s ease; }
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.1em;
-  padding: 12px 16px;
+  padding: 13px 17px;
   text-transform: uppercase;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
 .auth-form button:hover,
 .account-card button:hover,
 .account-link:hover {
   background: var(--accent);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
+  transform: translateY(-1px);
 }
 
 .auth-alert,
 .account-notice {
+  border-left: 3px solid currentColor;
   font-size: 0.82rem;
   margin-top: 18px;
-  padding: 11px 12px;
+  padding: 12px 13px;
 }
 
 .auth-alert-error,
@@ -1144,7 +1171,9 @@ main { animation: fadeIn 0.3s ease; }
 .auth-switch {
   color: var(--muted);
   font-size: 0.86rem;
-  margin-top: 18px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
 
 .auth-switch a {
@@ -1154,6 +1183,7 @@ main { animation: fadeIn 0.3s ease; }
 
 .auth-dev-link {
   background: var(--tag-bg);
+  border-left: 3px solid var(--accent);
   margin-top: 22px;
   overflow-wrap: anywhere;
   padding: 14px;
@@ -1194,6 +1224,7 @@ main { animation: fadeIn 0.3s ease; }
 }
 
 .account-status {
+  background: #fff;
   border: 1px solid var(--border);
   flex-shrink: 0;
   font-size: 0.68rem;
@@ -1204,13 +1235,25 @@ main { animation: fadeIn 0.3s ease; }
 }
 
 .account-status.is-verified {
+  background: #ecfdf5;
   border-color: #047857;
   color: #047857;
 }
 
 .account-status.is-pending {
+  background: #fff1f2;
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.auth-panel,
+.account-panel,
+.account-card,
+.auth-form input,
+.auth-form button,
+.account-card button,
+.account-link {
+  border-radius: 0;
 }
 
 @media (max-width: 640px) {
@@ -1221,11 +1264,11 @@ main { animation: fadeIn 0.3s ease; }
   .auth-panel,
   .account-panel,
   .account-card {
-    padding: 20px;
+    padding: 22px;
   }
   .auth-panel h1,
   .account-panel h1 {
-    font-size: 1.55rem;
+    font-size: 1.65rem;
   }
   .account-panel {
     align-items: flex-start;

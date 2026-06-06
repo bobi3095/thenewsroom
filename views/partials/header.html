@@ -112,17 +112,23 @@
   flex-shrink: 0;
 }
 .header-account a {
-  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.16);
   color: rgba(255,255,255,0.72);
   font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   padding: 6px 9px;
   text-transform: uppercase;
-  transition: all 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .header-account a:hover {
+  background: rgba(200,16,46,0.18);
   border-color: var(--accent);
+  color: white;
+}
+.header-account a:last-child {
+  border-color: rgba(200,16,46,0.55);
   color: white;
 }
 @media (max-width: 640px) {
@@ -154,11 +160,15 @@
   .header-account {
     margin-left: auto;
     gap: 5px;
+    max-width: calc(100vw - 190px);
   }
   .header-account a {
     font-size: 0.58rem;
     padding: 5px 7px;
     letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>
