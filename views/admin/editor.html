@@ -473,7 +473,7 @@ async function uploadInlineImage(input) {
   const formData = new FormData();
   formData.append('image', input.files[0]);
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('_csrf='))?.split('=')[1] || '';
+    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
     formData.append('_csrf', csrfToken);
     const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
     const data = await res.json();
@@ -586,7 +586,7 @@ async function uploadInlineVideo(input) {
   var formData = new FormData();
   formData.append('image', file);
   try {
-    var csrfTok = document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('_csrf=');});
+    var csrfTok = document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('csrfToken=');});
     var csrfVal = csrfTok ? csrfTok.split('=')[1] : '';
     formData.append('_csrf', csrfVal);
     var res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
@@ -822,7 +822,7 @@ async function uploadInlineImage(input) {
   const formData = new FormData();
   formData.append('image', input.files[0]);
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('_csrf='))?.split('=')[1] || '';
+    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
     formData.append('_csrf', csrfToken);
     const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
     const data = await res.json();
@@ -940,7 +940,7 @@ async function uploadInlineVideo(input) {
   formData.append('image', file); // reuse upload endpoint
 
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('_csrf='))?.split('=')[1] || '';
+    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
     formData.append('_csrf', csrfToken);
     const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
     const data = await res.json();
