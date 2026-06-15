@@ -51,6 +51,12 @@ function csrfProtection(req, res, next) {
   const cookieToken = req.cookies?.[CSRF_COOKIE];
   const submittedToken = req.body?._csrf || req.get('x-csrf-token');
   if (!cookieToken || !submittedToken || cookieToken !== submittedToken) {
+    const wantsJson = req.xhr || req.get('accept')?.includes('application/json');
+    if (wantsJson) {
+      return res.status(403).json({
+        error: 'Invalid CSRF token. Refresh the page and try again.'
+      });
+    }
     return res.status(403).send('Invalid CSRF token');
   }
   next();

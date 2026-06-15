@@ -253,7 +253,7 @@ router.post('/cache/clear', authMiddleware, adminOnly, csrfProtection, (req, res
 });
 
 // ── IMAGE UPLOAD (editor) ─────────────────────────────────────────
-router.post('/upload-image', authMiddleware, upload.single('image'), csrfProtection, async (req, res) => {
+router.post('/upload-image', authMiddleware, csrfProtection, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const url = await saveFile(req.file);

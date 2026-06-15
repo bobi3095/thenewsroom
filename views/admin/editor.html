@@ -443,6 +443,34 @@ function closeModal(id) {
 document.getElementById('image-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('image-modal'); });
 document.getElementById('video-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('video-modal'); });
 
+function getEditorCsrfToken() {
+  const inputToken = document.querySelector('input[name="_csrf"]')?.value;
+  if (inputToken) return inputToken;
+  const cookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrfToken='));
+  return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : '';
+}
+
+async function parseUploadResponse(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+function uploadRequestOptions(csrfToken, formData) {
+  return {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'x-csrf-token': csrfToken
+    },
+    body: formData
+  };
+}
+
 // ── IMAGE TABS ──
 function switchImgTab(tab) {
   document.getElementById('img-url-panel').style.display = tab==='url' ? 'block' : 'none';
@@ -473,10 +501,14 @@ async function uploadInlineImage(input) {
   const formData = new FormData();
   formData.append('image', input.files[0]);
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
+    const csrfToken = getEditorCsrfToken();
     formData.append('_csrf', csrfToken);
-    const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
-    const data = await res.json();
+    const res = await fetch('/admin/upload-image', uploadRequestOptions(csrfToken, formData));
+    const data = await parseUploadResponse(res);
+    if (!res.ok) {
+      status.textContent = '❌ Upload failed: ' + (data.error || res.statusText);
+      return;
+    }
     if (data.url) {
       const html = '<figure style="margin:1.5em 0"><img src="' + data.url + '" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure><p></p>';
       status.textContent = '✅ Image inserted!';
@@ -586,11 +618,14 @@ async function uploadInlineVideo(input) {
   var formData = new FormData();
   formData.append('image', file);
   try {
-    var csrfTok = document.cookie.split(';').map(function(c){return c.trim();}).find(function(c){return c.startsWith('csrfToken=');});
-    var csrfVal = csrfTok ? csrfTok.split('=')[1] : '';
+    var csrfVal = getEditorCsrfToken();
     formData.append('_csrf', csrfVal);
-    var res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
-    var data = await res.json();
+    var res = await fetch('/admin/upload-image', uploadRequestOptions(csrfVal, formData));
+    var data = await parseUploadResponse(res);
+    if (!res.ok) {
+      status.textContent = 'Upload failed: ' + (data.error || res.statusText);
+      return;
+    }
     if (data.url) {
       var html = '<div style="margin:1.5em 0">'
         + '<video controls style="max-width:100%;height:auto;display:block;border-radius:4px">'
@@ -822,10 +857,14 @@ async function uploadInlineImage(input) {
   const formData = new FormData();
   formData.append('image', input.files[0]);
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
+    const csrfToken = getEditorCsrfToken();
     formData.append('_csrf', csrfToken);
-    const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
-    const data = await res.json();
+    const res = await fetch('/admin/upload-image', uploadRequestOptions(csrfToken, formData));
+    const data = await parseUploadResponse(res);
+    if (!res.ok) {
+      status.textContent = '❌ Upload failed: ' + (data.error || res.statusText);
+      return;
+    }
     if (data.url) {
       const html = '<figure style="margin:1.5em 0"><img src="' + data.url + '" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure><p></p>';
       status.textContent = '✅ Image inserted!';
@@ -940,10 +979,14 @@ async function uploadInlineVideo(input) {
   formData.append('image', file); // reuse upload endpoint
 
   try {
-    const csrfToken = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrfToken='))?.split('=')[1] || '';
+    const csrfToken = getEditorCsrfToken();
     formData.append('_csrf', csrfToken);
-    const res = await fetch('/admin/upload-image', { method: 'POST', body: formData });
-    const data = await res.json();
+    const res = await fetch('/admin/upload-image', uploadRequestOptions(csrfToken, formData));
+    const data = await parseUploadResponse(res);
+    if (!res.ok) {
+      status.textContent = '❌ Upload failed: ' + (data.error || res.statusText);
+      return;
+    }
     if (data.url) {
       const html = '<div style="margin:1.5em 0"><video controls style="max-width:100%;height:auto;display:block">'
         + '<source src="' + data.url + '" type="' + file.type + '">'
