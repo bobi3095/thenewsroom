@@ -86,6 +86,14 @@ router.get('/articles/edit/:id', authMiddleware, async (req, res) => {
 router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtection, async (req, res) => {
   try {
     const { id, title, content, excerpt, status, featured, removeImage } = req.body;
+    const coverHeight = Math.min(700, Math.max(220, parseInt(req.body.coverHeight, 10) || 460));
+    const coverFit = ['cover', 'contain'].includes(req.body.coverFit) ? req.body.coverFit : 'cover';
+    const validCoverPositions = new Set([
+      'left top', 'center top', 'right top',
+      'left center', 'center center', 'right center',
+      'left bottom', 'center bottom', 'right bottom'
+    ]);
+    const coverPosition = validCoverPositions.has(req.body.coverPosition) ? req.body.coverPosition : 'center center';
     if (!title || title.trim().length < 3) return res.status(400).send('Article title is required');
     // Handle multiple categories - comes as array or single value
     const rawCats = req.body.categories;
@@ -110,7 +118,10 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
         slug: slugify(title),
-        image: removeImage === '1' ? '' : (imageUrl || existing?.image || '')
+        image: removeImage === '1' ? '' : (imageUrl || existing?.image || ''),
+        coverHeight,
+        coverFit,
+        coverPosition
       });
     } else {
       await db.createArticle({
@@ -122,7 +133,10 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         slug: slugify(title),
         author: req.user.name,
         authorId: req.user.id,
-        image: imageUrl || ''
+        image: imageUrl || '',
+        coverHeight,
+        coverFit,
+        coverPosition
       });
     }
     clearCache(); // Clear all cache so new article appears immediately

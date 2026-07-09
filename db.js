@@ -39,6 +39,9 @@ async function initPostgres() {
       status TEXT DEFAULT 'draft',
       featured BOOLEAN DEFAULT false,
       image TEXT DEFAULT '',
+      cover_height INTEGER DEFAULT 460,
+      cover_fit TEXT DEFAULT 'cover',
+      cover_position TEXT DEFAULT 'center center',
       views INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -63,6 +66,9 @@ async function initPostgres() {
   `).catch(() => {});
   await pool.query(`
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}';
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_height INTEGER DEFAULT 460;
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_fit TEXT DEFAULT 'cover';
+    ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_position TEXT DEFAULT 'center center';
   `).catch(() => {});
   await pool.query(`
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
@@ -147,9 +153,9 @@ const db = {
     if (isPostgres) {
       const cats = data.categories || [data.category];
       const { rows } = await pool.query(`
-        INSERT INTO articles (title,slug,category,categories,excerpt,content,author,author_id,status,featured,image)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *
-      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.author,data.authorId,data.status,data.featured,data.image||'']);
+        INSERT INTO articles (title,slug,category,categories,excerpt,content,author,author_id,status,featured,image,cover_height,cover_fit,cover_position)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *
+      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.author,data.authorId,data.status,data.featured,data.image||'',data.coverHeight||460,data.coverFit||'cover',data.coverPosition||'center center']);
       return pgToArticle(rows[0]);
     } else {
       const lowdb = getLowdb();
@@ -166,8 +172,8 @@ const db = {
       const cats = data.categories || [data.category];
       const { rows } = await pool.query(`
         UPDATE articles SET title=$1,slug=$2,category=$3,categories=$4,excerpt=$5,content=$6,
-        status=$7,featured=$8,image=$9,updated_at=NOW() WHERE id=$10 RETURNING *
-      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.status,data.featured,data.image,id]);
+        status=$7,featured=$8,image=$9,cover_height=$10,cover_fit=$11,cover_position=$12,updated_at=NOW() WHERE id=$13 RETURNING *
+      `, [data.title,data.slug,data.category,cats,data.excerpt,data.content,data.status,data.featured,data.image,data.coverHeight||460,data.coverFit||'cover',data.coverPosition||'center center',id]);
       return rows[0] ? pgToArticle(rows[0]) : null;
     } else {
       const lowdb = getLowdb();
@@ -385,6 +391,9 @@ function pgToArticle(row) {
     excerpt: row.excerpt, content: row.content, author: row.author,
     authorId: row.author_id, status: row.status, featured: row.featured,
     image: row.image, views: row.views,
+    coverHeight: row.cover_height || 460,
+    coverFit: row.cover_fit || 'cover',
+    coverPosition: row.cover_position || 'center center',
     authorAvatar: row.author_avatar || '',
     authorBio: row.author_bio || '',
     createdAt: row.created_at, updatedAt: row.updated_at

@@ -13,6 +13,20 @@
     #content-editor ul, #content-editor ol { margin:0.8em 0 0.8em 1.5em; }
     #content-editor li { margin-bottom:4px; }
     #content-editor p { margin-bottom:1em; }
+    #content-editor figure.article-image { margin:1.5em auto; max-width:100%; }
+    #content-editor figure.article-image img { width:100%; height:auto; display:block; }
+    #content-editor figure.article-image.is-selected { outline:2px solid #c8102e; outline-offset:4px; }
+    .image-edit-panel { display:none; align-items:center; flex-wrap:wrap; gap:8px; padding:10px; margin-top:8px; background:#fff; border:1px solid var(--border); border-left:3px solid var(--accent); }
+    .image-edit-panel.active { display:flex; }
+    .image-edit-panel label { font-size:0.72rem; color:var(--muted); font-weight:600; }
+    .image-edit-panel input[type="range"] { width:150px; }
+    .image-edit-panel button { border:1px solid var(--border); background:#fff; padding:5px 8px; cursor:pointer; font-size:0.75rem; }
+    .image-edit-panel button:hover { border-color:var(--ink); color:var(--accent); }
+    .cover-controls { display:grid; gap:10px; margin-top:12px; }
+    .cover-controls label { display:grid; gap:4px; font-size:0.72rem; color:var(--muted); font-weight:600; }
+    .cover-controls select, .cover-controls input[type="range"] { width:100%; }
+    .cover-size-row { display:flex; align-items:center; gap:8px; }
+    .cover-size-row span { min-width:46px; font-size:0.72rem; color:var(--ink); text-align:right; }
   </style>
 </head>
 <body>
@@ -87,6 +101,15 @@
                 contenteditable="true"
                 data-placeholder="Write your article here..."
               ><%- article ? article.content : '' %></div>
+              <div id="image-edit-panel" class="image-edit-panel">
+                <label for="inline-image-size">Image size</label>
+                <input type="range" id="inline-image-size" min="25" max="100" step="5" value="100" oninput="resizeSelectedImage(this.value)">
+                <span id="inline-image-size-value" style="font-size:0.75rem;color:var(--ink);min-width:38px">100%</span>
+                <button type="button" onclick="alignSelectedImage('left')">Left</button>
+                <button type="button" onclick="alignSelectedImage('center')">Center</button>
+                <button type="button" onclick="alignSelectedImage('right')">Right</button>
+                <button type="button" onclick="removeSelectedImage()">Remove</button>
+              </div>
             </div>
           </div>
 
@@ -136,6 +159,9 @@
             <!-- Cover Image -->
             <div class="panel-section">
               <div class="panel-title">Cover Image</div>
+              <% const coverHeight = article && article.coverHeight ? article.coverHeight : 460; %>
+              <% const coverFit = article && article.coverFit ? article.coverFit : 'cover'; %>
+              <% const coverPosition = article && article.coverPosition ? article.coverPosition : 'center center'; %>
               <div id="image-upload-area" class="image-upload-area" onclick="document.getElementById('image-input').click()">
                 <div class="upload-icon">🖼</div>
                 <p>Click to upload cover image</p>
@@ -148,7 +174,7 @@
               <input type="file" id="image-input" name="image" accept="image/*" style="display:none" onchange="previewImage(this)">
               <% if (article && article.image) { %>
               <div id="current-image-wrap" style="margin-top:8px">
-                <img src="<%= article.image %>" style="width:100%;height:100px;object-fit:cover;margin-bottom:6px">
+                <img id="current-cover-img" src="<%= article.image %>" style="width:100%;height:100px;object-fit:<%= coverFit %>;object-position:<%= coverPosition %>;margin-bottom:6px;background:#f3f3f3">
                 <div style="display:flex;gap:8px;align-items:center">
                   <a href="<%= article.image %>" target="_blank" style="font-size:0.72rem;color:var(--accent)">View current</a>
                   <button type="button" onclick="removeCurrentImage()" style="font-size:0.7rem;color:var(--danger);background:none;border:1px solid #fca5a5;padding:2px 8px;cursor:pointer">✕ Remove</button>
@@ -156,6 +182,40 @@
                 <input type="hidden" name="removeImage" id="remove-image-flag" value="0">
               </div>
               <% } %>
+              <div class="cover-controls">
+                <label>
+                  Cover height
+                  <div class="cover-size-row">
+                    <input type="range" name="coverHeight" id="cover-height-input" min="220" max="700" step="20" value="<%= coverHeight %>" oninput="updateCoverPreview()">
+                    <span id="cover-height-value"><%= coverHeight %>px</span>
+                  </div>
+                </label>
+                <label>
+                  Image fit
+                  <select name="coverFit" id="cover-fit-input" onchange="updateCoverPreview()">
+                    <option value="cover" <%= coverFit === 'cover' ? 'selected' : '' %>>Fill area</option>
+                    <option value="contain" <%= coverFit === 'contain' ? 'selected' : '' %>>Show full image</option>
+                  </select>
+                </label>
+                <label>
+                  Focus point
+                  <select name="coverPosition" id="cover-position-input" onchange="updateCoverPreview()">
+                    <% [
+                      ['center center', 'Center'],
+                      ['center top', 'Top'],
+                      ['center bottom', 'Bottom'],
+                      ['left center', 'Left'],
+                      ['right center', 'Right'],
+                      ['left top', 'Top left'],
+                      ['right top', 'Top right'],
+                      ['left bottom', 'Bottom left'],
+                      ['right bottom', 'Bottom right']
+                    ].forEach(([value, label]) => { %>
+                      <option value="<%= value %>" <%= coverPosition === value ? 'selected' : '' %>><%= label %></option>
+                    <% }) %>
+                  </select>
+                </label>
+              </div>
             </div>
 
             <!-- Article Info -->
@@ -184,6 +244,7 @@
 <script>
 // Sync contenteditable to hidden input before submit
 function prepareSubmit() {
+  normalizeEditorImages();
   document.getElementById('content-hidden').value = document.getElementById('content-editor').innerHTML;
 }
 
@@ -221,8 +282,95 @@ function insertImage() {
   const url = prompt('Enter image URL:');
   if (url) {
     document.getElementById('content-editor').focus();
-    document.execCommand('insertImage', false, url);
+    document.execCommand('insertHTML', false, buildImageFigure(url, 'Image'));
   }
+}
+
+let selectedImageFigure = null;
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+function buildImageFigure(url, alt) {
+  const safeUrl = escapeHtml(url);
+  const safeAlt = escapeHtml(alt || 'Image');
+  return '<figure class="article-image is-resizable" style="width:100%;margin:1.5em auto">'
+    + '<img src="' + safeUrl + '" alt="' + safeAlt + '" style="width:100%;height:auto;display:block">'
+    + (alt ? '<figcaption style="text-align:center">' + safeAlt + '</figcaption>' : '')
+    + '</figure><p></p>';
+}
+
+function normalizeEditorImages() {
+  document.querySelectorAll('#content-editor img').forEach(img => {
+    if (img.closest('figure.article-image')) return;
+    const figure = document.createElement('figure');
+    figure.className = 'article-image is-resizable';
+    figure.setAttribute('style', 'width:100%;margin:1.5em auto');
+    img.setAttribute('style', 'width:100%;height:auto;display:block');
+    img.parentNode.insertBefore(figure, img);
+    figure.appendChild(img);
+  });
+}
+
+function selectEditorImage(figure) {
+  if (selectedImageFigure) selectedImageFigure.classList.remove('is-selected');
+  selectedImageFigure = figure;
+  selectedImageFigure.classList.add('is-selected');
+  const widthMatch = (figure.getAttribute('style') || '').match(/width:\s*(\d+)%/i);
+  const width = widthMatch ? widthMatch[1] : '100';
+  const sizeInput = document.getElementById('inline-image-size');
+  const sizeValue = document.getElementById('inline-image-size-value');
+  if (sizeInput) sizeInput.value = width;
+  if (sizeValue) sizeValue.textContent = width + '%';
+  document.getElementById('image-edit-panel')?.classList.add('active');
+}
+
+function resizeSelectedImage(value) {
+  if (!selectedImageFigure) return;
+  const size = Math.min(100, Math.max(25, parseInt(value, 10) || 100));
+  selectedImageFigure.style.width = size + '%';
+  selectedImageFigure.style.maxWidth = '100%';
+  selectedImageFigure.style.margin = '1.5em auto';
+  document.getElementById('inline-image-size-value').textContent = size + '%';
+}
+
+function alignSelectedImage(direction) {
+  if (!selectedImageFigure) return;
+  const margin = direction === 'left' ? '1.5em auto 1.5em 0'
+    : direction === 'right' ? '1.5em 0 1.5em auto'
+    : '1.5em auto';
+  selectedImageFigure.style.margin = margin;
+  selectedImageFigure.style.textAlign = direction;
+}
+
+function removeSelectedImage() {
+  if (!selectedImageFigure) return;
+  selectedImageFigure.remove();
+  selectedImageFigure = null;
+  document.getElementById('image-edit-panel')?.classList.remove('active');
+}
+
+function updateCoverPreview() {
+  const height = document.getElementById('cover-height-input')?.value || 460;
+  const fit = document.getElementById('cover-fit-input')?.value || 'cover';
+  const position = document.getElementById('cover-position-input')?.value || 'center center';
+  const heightLabel = document.getElementById('cover-height-value');
+  if (heightLabel) heightLabel.textContent = height + 'px';
+  ['preview-img', 'current-cover-img'].forEach(id => {
+    const img = document.getElementById(id);
+    if (!img) return;
+    img.style.height = Math.max(80, Math.round(parseInt(height, 10) / 4)) + 'px';
+    img.style.objectFit = fit;
+    img.style.objectPosition = position;
+    img.style.background = '#f3f3f3';
+  });
 }
 
 // Image preview
@@ -233,6 +381,7 @@ function previewImage(input) {
       document.getElementById('preview-img').src = e.target.result;
       document.getElementById('image-preview').style.display = 'block';
       document.getElementById('image-upload-area').style.display = 'none';
+      updateCoverPreview();
     };
     reader.readAsDataURL(input.files[0]);
   }
@@ -254,6 +403,22 @@ document.getElementById('content-editor').addEventListener('keydown', e => {
     }
   }
 });
+
+document.getElementById('content-editor').addEventListener('click', e => {
+  const figure = e.target.closest('figure.article-image');
+  if (figure && document.getElementById('content-editor').contains(figure)) {
+    selectEditorImage(figure);
+    return;
+  }
+  if (!e.target.closest('#image-edit-panel')) {
+    if (selectedImageFigure) selectedImageFigure.classList.remove('is-selected');
+    selectedImageFigure = null;
+    document.getElementById('image-edit-panel')?.classList.remove('active');
+  }
+});
+
+normalizeEditorImages();
+updateCoverPreview();
 
 // Remove current image
 function removeCurrentImage() {
@@ -494,7 +659,7 @@ function insertImageFromUrl() {
   const url = document.getElementById('img-url-input').value.trim();
   const alt = document.getElementById('img-alt-input').value.trim() || 'Image';
   if (!url) { alert('Please enter an image URL'); return; }
-  const html = '<figure style="margin:1.5em 0"><img src="' + url + '" alt="' + alt + '" style="max-width:100%;height:auto;display:block"><figcaption style="font-size:0.8rem;color:#888;margin-top:6px;text-align:center">' + alt + '</figcaption></figure><p></p>';
+  const html = buildImageFigure(url, alt);
   closeModal('image-modal');
   restoreAndInsert(html);
   document.getElementById('img-url-input').value = '';
@@ -518,7 +683,7 @@ async function uploadInlineImage(input) {
       return;
     }
     if (data.url) {
-      const html = '<figure style="margin:1.5em 0"><img src="' + data.url + '" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure><p></p>';
+      const html = buildImageFigure(data.url, 'Uploaded image');
       status.textContent = '✅ Image inserted!';
       setTimeout(() => { closeModal('image-modal'); restoreAndInsert(html); status.textContent = ''; input.value=''; }, 500);
     } else {
@@ -886,7 +1051,7 @@ function insertImageFromUrl() {
   const url = document.getElementById('img-url-input').value.trim();
   const alt = document.getElementById('img-alt-input').value.trim() || 'Image';
   if (!url) { alert('Please enter an image URL'); return; }
-  const html = '<figure style="margin:1.5em 0"><img src="' + url + '" alt="' + alt + '" style="max-width:100%;height:auto;display:block"><figcaption style="font-size:0.8rem;color:#888;margin-top:6px;text-align:center">' + alt + '</figcaption></figure><p></p>';
+  const html = buildImageFigure(url, alt);
   closeModal('image-modal');
   restoreAndInsert(html);
   document.getElementById('img-url-input').value = '';
@@ -910,7 +1075,7 @@ async function uploadInlineImage(input) {
       return;
     }
     if (data.url) {
-      const html = '<figure style="margin:1.5em 0"><img src="' + data.url + '" alt="Uploaded image" style="max-width:100%;height:auto;display:block"></figure><p></p>';
+      const html = buildImageFigure(data.url, 'Uploaded image');
       status.textContent = '✅ Image inserted!';
       setTimeout(() => { closeModal('image-modal'); restoreAndInsert(html); status.textContent = ''; input.value=''; }, 500);
     } else {

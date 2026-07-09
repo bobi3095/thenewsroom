@@ -127,8 +127,12 @@
       </header>
 
       <% if (article.image) { %>
-      <div class="article-cover">
-        <img src="<%= article.image %>" alt="<%= article.title %>">
+      <div class="article-cover" style="height:<%= article.coverHeight || 460 %>px">
+        <img
+          src="<%= article.image %>"
+          alt="<%= article.title %>"
+          style="object-fit:<%= article.coverFit || 'cover' %>;object-position:<%= article.coverPosition || 'center center' %>"
+        >
       </div>
       <% } %>
 

@@ -7,8 +7,37 @@ const allowedTags = new Set([
 const voidTags = new Set(['br', 'img']);
 const allowedAttrs = {
   a: new Set(['href', 'title', 'target', 'rel']),
-  img: new Set(['src', 'alt', 'title'])
+  img: new Set(['src', 'alt', 'title', 'style']),
+  figure: new Set(['class', 'style']),
+  figcaption: new Set(['style'])
 };
+
+function sanitizeStyle(value = '') {
+  const safe = [];
+  String(value).split(';').forEach(part => {
+    const [rawProp, ...rawValueParts] = part.split(':');
+    if (!rawProp || !rawValueParts.length) return;
+    const prop = rawProp.trim().toLowerCase();
+    const val = rawValueParts.join(':').trim().toLowerCase();
+    if (!val || /url|expression|javascript|<|>/i.test(val)) return;
+
+    if (prop === 'width' && /^([1-9][0-9]?|100)%$/.test(val)) safe.push(`width:${val}`);
+    if (prop === 'max-width' && val === '100%') safe.push('max-width:100%');
+    if (prop === 'height' && (val === 'auto' || /^([1-9][0-9]{1,2})px$/.test(val))) safe.push(`height:${val}`);
+    if (prop === 'display' && ['block', 'inline-block'].includes(val)) safe.push(`display:${val}`);
+    if (
+      prop === 'margin'
+      && (
+        /^([0-9.]+em|[0-9]+px)\s+(auto|0)$/.test(val)
+        || /^([0-9.]+em|[0-9]+px)\s+(auto|0)\s+([0-9.]+em|[0-9]+px)\s+(auto|0)$/.test(val)
+      )
+    ) safe.push(`margin:${val}`);
+    if (prop === 'text-align' && ['left', 'center', 'right'].includes(val)) safe.push(`text-align:${val}`);
+    if (prop === 'object-fit' && ['cover', 'contain'].includes(val)) safe.push(`object-fit:${val}`);
+    if (prop === 'object-position' && /^(left|center|right)\s+(top|center|bottom)$/.test(val)) safe.push(`object-position:${val}`);
+  });
+  return safe.join(';');
+}
 
 function isSafeUrl(value, allowDataImage = false) {
   if (!value) return false;
@@ -39,6 +68,13 @@ function sanitizeArticleHtml(html = '') {
           if (!allowed.has(name) || name.startsWith('on')) return '';
           const value = dQuote ?? sQuote ?? bare ?? '';
           if ((name === 'href' && !isSafeUrl(value)) || (name === 'src' && !isSafeUrl(value, true))) return '';
+          if (name === 'style') {
+            const safeStyle = sanitizeStyle(value);
+            if (!safeStyle) return '';
+            attrs.push(`style="${safeStyle.replace(/"/g, '&quot;')}"`);
+            return '';
+          }
+          if (name === 'class' && !/^article-image(\s+is-resizable)?$/.test(value)) return '';
           const escaped = value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
           attrs.push(`${name}="${escaped}"`);
           return '';
