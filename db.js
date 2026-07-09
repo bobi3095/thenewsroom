@@ -57,6 +57,13 @@ async function initPostgres() {
       verification_expires TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS article_metrics (
+      id SERIAL PRIMARY KEY,
+      article_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   // Add new columns if upgrading from old schema
@@ -358,6 +365,61 @@ const db = {
     }
   },
 
+  async recordArticleMetric(articleId, type) {
+    const validTypes = new Set(['view', 'click', 'share']);
+    const metricType = validTypes.has(type) ? type : 'view';
+    const id = parseInt(articleId, 10);
+    if (!id) return;
+    if (isPostgres) {
+      await pool.query('INSERT INTO article_metrics (article_id,type) VALUES ($1,$2)', [id, metricType]);
+      if (metricType === 'view') await pool.query('UPDATE articles SET views = views + 1 WHERE id=$1', [id]);
+    } else {
+      const lowdb = getLowdb();
+      lowdb.data.articleMetrics ||= [];
+      lowdb.data.articleMetrics.push({ articleId: id, type: metricType, createdAt: new Date().toISOString() });
+      if (metricType === 'view') {
+        const a = lowdb.data.articles.find(a => a.id === id);
+        if (a) a.views = (a.views || 0) + 1;
+      }
+      lowdb.write();
+    }
+  },
+
+  async getTrendingArticles(articles, hours = 24) {
+    const articleMap = new Map(articles.map(a => [a.id, a]));
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const scores = new Map();
+    const addScore = (articleId, type, count = 1) => {
+      const weight = type === 'share' ? 4 : type === 'click' ? 2 : 1;
+      const current = scores.get(articleId) || { score: 0, views: 0, clicks: 0, shares: 0 };
+      current.score += weight * count;
+      if (type === 'view') current.views += count;
+      if (type === 'click') current.clicks += count;
+      if (type === 'share') current.shares += count;
+      scores.set(articleId, current);
+    };
+
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        SELECT article_id, type, COUNT(*)::int AS count
+        FROM article_metrics
+        WHERE created_at >= $1
+        GROUP BY article_id, type
+      `, [since]);
+      rows.forEach(row => addScore(row.article_id, row.type, row.count));
+    } else {
+      const lowdb = getLowdb();
+      (lowdb.data.articleMetrics || [])
+        .filter(m => new Date(m.createdAt) >= since)
+        .forEach(m => addScore(m.articleId, m.type));
+    }
+
+    return [...scores.entries()]
+      .map(([id, stats]) => ({ ...articleMap.get(id), trending: stats }))
+      .filter(a => a.id && a.status === 'published')
+      .sort((a, b) => b.trending.score - a.trending.score || new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
   async verifyPublicUser(id) {
     if (isPostgres) {
       const { rows } = await pool.query(
@@ -441,6 +503,7 @@ function initLowdb() {
   _lowdb = new Low(adapter, { users:[], publicUsers:[], articles:[], categories:['Politics','Technology','Sports','World News','Uncovered'] });
   _lowdb.read();
   _lowdb.data.publicUsers ||= [];
+  _lowdb.data.articleMetrics ||= [];
   if (!_lowdb.data.users?.length) {
     if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
       throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');

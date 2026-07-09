@@ -462,7 +462,7 @@
 
       <div class="article-feed">
         <% feedArticles.forEach(a => { %>
-        <a href="/article/<%= a.slug %>" class="feed-card">
+        <a href="/article/<%= a.slug %>" class="feed-card" data-track-article="<%= a.id %>">
           <div class="feed-thumb">
             <% if (a.image) { %>
               <img src="<%= a.image %>" alt="<%= a.title %>">
@@ -493,12 +493,17 @@
     <aside class="feed-side">
       <div class="side-panel">
         <div class="side-title">Trending Now</div>
-        <% feedArticles.slice().sort((a,b) => (b.views || 0) - (a.views || 0)).slice(0, 6).forEach((a, i) => { %>
-        <a class="side-item" href="/article/<%= a.slug %>">
-          <span class="side-rank"><%= i + 1 %></span>
-          <span class="side-link"><%= a.title %></span>
-        </a>
-        <% }) %>
+        <% const trendingList = trendingArticles || []; %>
+        <% if (trendingList.length > 0) { %>
+          <% trendingList.slice(0, 6).forEach((a, i) => { %>
+          <a class="side-item" href="/article/<%= a.slug %>" data-track-article="<%= a.id %>">
+            <span class="side-rank"><%= i + 1 %></span>
+            <span class="side-link"><%= a.title %></span>
+          </a>
+          <% }) %>
+        <% } else { %>
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.5;padding-top:8px">Trending will appear after articles receive views, clicks, or shares in the last 24 hours.</p>
+        <% } %>
       </div>
 
       <div class="side-panel">
@@ -520,5 +525,18 @@
 
 <%- include('partials/footer.html') %>
 <script src="/js/main.js"></script>
+<script>
+function trackArticleMetric(articleId, type) {
+  if (!articleId || !navigator.sendBeacon) return;
+  const body = new Blob([JSON.stringify({ type: type })], { type: 'application/json' });
+  navigator.sendBeacon('/track/article/' + articleId, body);
+}
+
+document.querySelectorAll('[data-track-article]').forEach(function(link) {
+  link.addEventListener('click', function() {
+    trackArticleMetric(this.dataset.trackArticle, 'click');
+  });
+});
+</script>
 </body>
 </html>

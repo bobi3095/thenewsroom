@@ -35,6 +35,7 @@ function getLatest6hrs(articles) {
 router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
   try {
     const articles = await db.getArticles({ status: 'published' });
+    const trendingArticles = await db.getTrendingArticles(articles, 24);
 
     // Hero: admin-marked featured articles only
     const heroArticles = articles.filter(a => a.featured);
@@ -62,13 +63,23 @@ router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
 
     res.render('home', {
       hero, heroSidebar, latestNews, todaysNews,
-      byCategory, bottomArticles, articles,
+      byCategory, bottomArticles, articles, trendingArticles,
       categories: ALL_CATEGORIES,
       navCategories: NAV_CATEGORIES,
       moreCategories: MORE_CATEGORIES,
       page: 'home'
     });
   } catch(e) { console.error(e); res.status(500).send('Server error: ' + e.message); }
+});
+
+router.post('/track/article/:id', async (req, res) => {
+  try {
+    await db.recordArticleMetric(req.params.id, req.body?.type);
+    res.sendStatus(204);
+  } catch(e) {
+    console.error('Track article metric error:', e);
+    res.sendStatus(204);
+  }
 });
 
 // Latest news page (last 6 hours)
@@ -109,7 +120,6 @@ router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
     article.content = sanitizeArticleHtml(article.content);
-    await db.incrementViews(article.id);
     // Get related from all categories this article belongs to
     const articleCats = Array.isArray(article.categories) && article.categories.length > 0
       ? article.categories : [article.category];

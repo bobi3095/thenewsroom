@@ -217,11 +217,26 @@
 // ── SHARE PANEL ──────────────────────────────────────────────────
 const pageUrl = window.location.href;
 const pageTitle = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : document.title;
+const articleId = '<%= article.id %>';
+
+function trackArticleMetric(type) {
+  if (!articleId || !navigator.sendBeacon) return;
+  const body = new Blob([JSON.stringify({ type: type })], { type: 'application/json' });
+  navigator.sendBeacon('/track/article/' + articleId, body);
+}
+
+trackArticleMetric('view');
 
 // Set share links
 document.getElementById('wa-link').href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(pageTitle + ' ' + pageUrl);
 document.getElementById('tw-link').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(pageTitle) + '&url=' + encodeURIComponent(pageUrl) + '&via=TheNewsroom_tnr';
 document.getElementById('tg-link').href = 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(pageTitle);
+
+['wa-link', 'tw-link', 'tg-link'].forEach(function(id) {
+  document.getElementById(id).addEventListener('click', function() {
+    trackArticleMetric('share');
+  });
+});
 
 // Toggle panel
 document.getElementById('share-btn').addEventListener('click', function(e) {
@@ -241,6 +256,7 @@ document.addEventListener('click', function(e) {
 
 // Copy link
 document.getElementById('copy-btn').addEventListener('click', function() {
+  trackArticleMetric('share');
   navigator.clipboard.writeText(pageUrl).then(function() {
     document.getElementById('copy-text').textContent = '✅ Copied!';
     setTimeout(function() {
