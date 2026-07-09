@@ -64,6 +64,13 @@ async function initPostgres() {
       type TEXT NOT NULL,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS public_user_follows (
+      public_user_id INTEGER NOT NULL,
+      author_id INTEGER NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (public_user_id, author_id)
+    );
   `);
 
   // Add new columns if upgrading from old schema
@@ -284,6 +291,99 @@ const db = {
     }
   },
 
+  async getAuthorProfile(authorId, publicUserId = null) {
+    const author = await db.getUserById(parseInt(authorId, 10));
+    if (!author || !['admin', 'author'].includes(author.role)) return null;
+    const articles = await db.getArticles({ status: 'published', authorId: author.id });
+    const followerCount = await db.getAuthorFollowerCount(author.id);
+    const isFollowing = publicUserId ? await db.isFollowingAuthor(publicUserId, author.id) : false;
+    return { ...author, articles, followerCount, isFollowing };
+  },
+
+  async followAuthor(publicUserId, authorId) {
+    const readerId = parseInt(publicUserId, 10);
+    const writerId = parseInt(authorId, 10);
+    if (!readerId || !writerId) return;
+    if (isPostgres) {
+      await pool.query(
+        `INSERT INTO public_user_follows (public_user_id, author_id)
+         VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+        [readerId, writerId]
+      );
+      return;
+    }
+    const lowdb = getLowdb();
+    lowdb.data.publicUserFollows ||= [];
+    if (!lowdb.data.publicUserFollows.some(f => f.publicUserId === readerId && f.authorId === writerId)) {
+      lowdb.data.publicUserFollows.push({ publicUserId: readerId, authorId: writerId, createdAt: new Date().toISOString() });
+      lowdb.write();
+    }
+  },
+
+  async unfollowAuthor(publicUserId, authorId) {
+    const readerId = parseInt(publicUserId, 10);
+    const writerId = parseInt(authorId, 10);
+    if (!readerId || !writerId) return;
+    if (isPostgres) {
+      await pool.query('DELETE FROM public_user_follows WHERE public_user_id=$1 AND author_id=$2', [readerId, writerId]);
+      return;
+    }
+    const lowdb = getLowdb();
+    lowdb.data.publicUserFollows = (lowdb.data.publicUserFollows || []).filter(f => !(f.publicUserId === readerId && f.authorId === writerId));
+    lowdb.write();
+  },
+
+  async isFollowingAuthor(publicUserId, authorId) {
+    const readerId = parseInt(publicUserId, 10);
+    const writerId = parseInt(authorId, 10);
+    if (!readerId || !writerId) return false;
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        'SELECT 1 FROM public_user_follows WHERE public_user_id=$1 AND author_id=$2 LIMIT 1',
+        [readerId, writerId]
+      );
+      return rows.length > 0;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.publicUserFollows || []).some(f => f.publicUserId === readerId && f.authorId === writerId);
+  },
+
+  async getAuthorFollowerCount(authorId) {
+    const writerId = parseInt(authorId, 10);
+    if (!writerId) return 0;
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT COUNT(*)::int AS count FROM public_user_follows WHERE author_id=$1', [writerId]);
+      return rows[0]?.count || 0;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.publicUserFollows || []).filter(f => f.authorId === writerId).length;
+  },
+
+  async getFollowedAuthors(publicUserId) {
+    const readerId = parseInt(publicUserId, 10);
+    if (!readerId) return [];
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        SELECT u.*, COUNT(a.id)::int AS article_count, MAX(f.created_at) AS followed_at
+        FROM public_user_follows f
+        JOIN users u ON u.id = f.author_id
+        LEFT JOIN articles a ON a.author_id = u.id AND a.status = 'published'
+        WHERE f.public_user_id=$1
+        GROUP BY u.id
+        ORDER BY followed_at DESC
+      `, [readerId]);
+      return rows.map(row => ({ ...pgToUser(row), articleCount: row.article_count || 0 }));
+    }
+    const lowdb = getLowdb();
+    const follows = (lowdb.data.publicUserFollows || []).filter(f => f.publicUserId === readerId);
+    return follows.map(f => {
+      const author = lowdb.data.users.find(u => u.id === f.authorId);
+      if (!author) return null;
+      const articleCount = lowdb.data.articles.filter(a => a.authorId === author.id && a.status === 'published').length;
+      return { ...author, articleCount };
+    }).filter(Boolean);
+  },
+
   async getPublicUserByEmail(email) {
     const normalized = normalizeEmail(email);
     if (isPostgres) {
@@ -363,6 +463,24 @@ const db = {
       user.verificationExpires = expiresAt;
       lowdb.write();
     }
+  },
+
+  async updatePublicUserProfile(id, data) {
+    const name = String(data.name || '').trim();
+    if (!name || name.length < 2) return null;
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        'UPDATE public_users SET name=$1 WHERE id=$2 RETURNING *',
+        [name, id]
+      );
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const user = (lowdb.data.publicUsers || []).find(u => u.id === id);
+    if (!user) return null;
+    user.name = name;
+    lowdb.write();
+    return user;
   },
 
   async recordArticleMetric(articleId, type) {
@@ -504,6 +622,7 @@ function initLowdb() {
   _lowdb.read();
   _lowdb.data.publicUsers ||= [];
   _lowdb.data.articleMetrics ||= [];
+  _lowdb.data.publicUserFollows ||= [];
   if (!_lowdb.data.users?.length) {
     if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
       throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');

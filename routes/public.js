@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../db');
 const { cacheMiddleware, KEYS } = require('../middleware/cache');
 const { sanitizeArticleHtml } = require('../middleware/sanitize');
+const { csrfProtection } = require('../middleware/security');
+const { requirePublicUser } = require('../middleware/publicAuth');
 
 // All categories including new ones
 const ALL_CATEGORIES = ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered', 'Opinion', 'India', 'Data', 'Law', 'Govt Schemes', 'Education'];
@@ -82,6 +84,40 @@ router.post('/track/article/:id', async (req, res) => {
   }
 });
 
+router.get('/journalist/:id', async (req, res) => {
+  try {
+    const profile = await db.getAuthorProfile(req.params.id, req.publicUser?.id || null);
+    if (!profile) {
+      return res.status(404).render('404', {
+        categories: ALL_CATEGORIES,
+        navCategories: NAV_CATEGORIES,
+        moreCategories: MORE_CATEGORIES,
+        page: '404'
+      });
+    }
+    res.render('journalist-profile', {
+      profile,
+      categories: ALL_CATEGORIES,
+      navCategories: NAV_CATEGORIES,
+      moreCategories: MORE_CATEGORIES,
+      page: 'journalist'
+    });
+  } catch(e) {
+    console.error('Journalist profile error:', e);
+    res.status(500).send('Server error');
+  }
+});
+
+router.post('/journalist/:id/follow', requirePublicUser, csrfProtection, async (req, res) => {
+  await db.followAuthor(req.publicUser.id, req.params.id);
+  res.redirect('/journalist/' + req.params.id);
+});
+
+router.post('/journalist/:id/unfollow', requirePublicUser, csrfProtection, async (req, res) => {
+  await db.unfollowAuthor(req.publicUser.id, req.params.id);
+  res.redirect('/journalist/' + req.params.id);
+});
+
 // Latest news page (last 6 hours)
 router.get('/latest', async (req, res) => {
   try {
@@ -120,6 +156,8 @@ router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
     article.content = sanitizeArticleHtml(article.content);
+    article.authorFollowerCount = await db.getAuthorFollowerCount(article.authorId);
+    article.isFollowingAuthor = req.publicUser ? await db.isFollowingAuthor(req.publicUser.id, article.authorId) : false;
     // Get related from all categories this article belongs to
     const articleCats = Array.isArray(article.categories) && article.categories.length > 0
       ? article.categories : [article.category];

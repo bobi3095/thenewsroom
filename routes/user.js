@@ -149,11 +149,13 @@ router.get('/verify/:token', async (req, res) => {
   }));
 });
 
-router.get('/account', requirePublicUser, (req, res) => {
+router.get('/account', requirePublicUser, async (req, res) => {
+  const followedAuthors = await db.getFollowedAuthors(req.publicUser.id);
   res.render('account', authViewData({
     user: req.publicUser,
-    success: req.query.resent === '1' ? 'A new verification link was generated.' : null,
-    warning: req.query.verify === 'required' ? 'Please verify your email before using that feature.' : null
+    followedAuthors,
+    success: req.query.resent === '1' ? 'A new verification link was generated.' : req.query.profile === 'updated' ? 'Profile updated.' : null,
+    warning: req.query.verify === 'required' ? 'Please verify your email before using that feature.' : req.query.profile === 'invalid' ? 'Please enter a valid display name.' : null
   }));
 });
 
@@ -167,6 +169,13 @@ router.post('/account/resend-verification', requirePublicUser, csrfProtection, a
     email: req.publicUser.email,
     verificationUrl: shouldShowVerificationLink() ? url : null
   }));
+});
+
+router.post('/account/profile', requirePublicUser, csrfProtection, async (req, res) => {
+  const name = String(req.body.name || '').trim();
+  if (!name || name.length < 2) return res.redirect('/account?profile=invalid');
+  await db.updatePublicUserProfile(req.publicUser.id, { name });
+  res.redirect('/account?profile=updated');
 });
 
 module.exports = router;

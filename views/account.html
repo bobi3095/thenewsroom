@@ -41,6 +41,44 @@
   <% } %>
 
   <section class="account-card">
+    <h2>Reader Profile</h2>
+    <p>This name is used for your reader account and future community features.</p>
+    <form method="POST" action="/account/profile" class="auth-form" style="margin-top:14px">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>
+        <span>Display name</span>
+        <input type="text" name="name" value="<%= user.name %>" required minlength="2" maxlength="80">
+      </label>
+      <button type="submit">Save Profile</button>
+    </form>
+  </section>
+
+  <section class="account-card">
+    <h2>Following</h2>
+    <% if (followedAuthors && followedAuthors.length > 0) { %>
+      <div class="follow-list">
+        <% followedAuthors.forEach(author => { %>
+          <a class="follow-row" href="/journalist/<%= author.id %>">
+            <span class="follow-avatar">
+              <% if (author.avatar) { %>
+                <img src="<%= author.avatar %>" alt="<%= author.name %>">
+              <% } else { %>
+                <%= author.name ? author.name[0].toUpperCase() : 'J' %>
+              <% } %>
+            </span>
+            <span>
+              <strong><%= author.name %></strong>
+              <small><%= author.articleCount || 0 %> published <%= (author.articleCount || 0) === 1 ? 'article' : 'articles' %></small>
+            </span>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <p>You are not following any journalists yet. Open a journalist profile and tap Follow.</p>
+    <% } %>
+  </section>
+
+  <section class="account-card">
     <h2>Account Security</h2>
     <p>Your login is protected with an HTTP-only cookie. Sign out when using a shared device.</p>
     <a href="/logout" class="account-link">Sign out</a>

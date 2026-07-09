@@ -113,7 +113,9 @@
               </div>
             <% } %>
             <div>
-              <div class="byline-name" style="font-size:0.88rem">By <%= article.author %></div>
+              <div class="byline-name" style="font-size:0.88rem">
+                By <a href="/journalist/<%= article.authorId %>" style="color:inherit;text-decoration:none"><%= article.author %></a>
+              </div>
               <% if (article.authorBio) { %>
                 <div style="font-size:0.75rem;color:var(--muted);margin-top:2px"><%= article.authorBio %></div>
               <% } %>
@@ -125,6 +127,27 @@
           </div>
         </div>
       </header>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-12px 0 28px;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <a href="/journalist/<%= article.authorId %>" style="color:var(--ink);font-size:0.86rem;font-weight:700">
+          <%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %> · View journalist profile
+        </a>
+        <% if (currentUser) { %>
+          <% if (article.isFollowingAuthor) { %>
+            <form method="POST" action="/journalist/<%= article.authorId %>/unfollow">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" style="border:1px solid var(--border);background:white;color:var(--ink);padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Following</button>
+            </form>
+          <% } else { %>
+            <form method="POST" action="/journalist/<%= article.authorId %>/follow">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" style="border:1px solid var(--ink);background:var(--ink);color:white;padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Follow</button>
+            </form>
+          <% } %>
+        <% } else { %>
+          <a href="/login" style="display:inline-flex;border:1px solid var(--ink);background:var(--ink);color:white;padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Follow</a>
+        <% } %>
+      </div>
 
       <% if (article.image) { %>
       <div class="article-cover" style="height:<%= article.coverHeight || 460 %>px">
