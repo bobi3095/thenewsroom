@@ -9,11 +9,11 @@
   <meta name="google-adsense-account" content="ca-pub-1671056769221306">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The News Room - Independent Journalism Platform</title>
-  <meta name="description" content="The News Room is an independent journalism platform where journalists can publish news and readers can discover every story in one scrolling feed.">
+  <meta name="description" content="The News Room is an independent journalism platform where verified journalists publish news and readers discover every story in one scrolling feed.">
 
   <meta property="og:type" content="website">
   <meta property="og:title" content="The News Room - Independent Journalism Platform">
-  <meta property="og:description" content="Independent journalists, open publishing, and a scrolling feed of stories from every category.">
+  <meta property="og:description" content="Verified independent journalists and a scrolling feed of stories from every category.">
   <meta property="og:url" content="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>">
   <meta property="og:site_name" content="The News Room">
   <meta property="og:image" content="<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>/images/logo.jpg">
@@ -31,7 +31,7 @@
     "name": "The News Room",
     "url": "<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>",
     "logo": "<%= process.env.SITE_URL || 'https://thenewsroom-vo82.onrender.com' %>/images/logo.jpg",
-    "description": "An independent journalism platform for open publishing and reader discovery.",
+    "description": "An independent journalism platform for verified journalists and reader discovery.",
     "sameAs": [
       "https://x.com/TheNewsroom_tnr",
       "https://www.instagram.com/_thenewsroom/",
@@ -435,11 +435,10 @@
       <div class="platform-kicker">Independent Journalism Platform</div>
       <h1 class="platform-title">News from independent voices, all in one feed.</h1>
       <p class="platform-subtitle">
-        The News Room is built like an open publishing platform: independent journalists can publish their stories, and readers can keep scrolling to discover every article without waiting for a front-page editor to choose what matters.
+        The News Room is built for verified independent journalists to publish their stories, while readers can keep scrolling to discover every article without waiting for a front-page editor to choose what matters.
       </p>
     </div>
     <div class="platform-actions">
-      <a class="platform-btn" href="/admin/articles/new">Post News</a>
       <a class="platform-btn secondary" href="/search">Search Stories</a>
     </div>
   </section>
@@ -513,8 +512,8 @@
   <% } else { %>
   <div class="empty-feed">
     <h2>No articles yet</h2>
-    <p>Once independent journalists publish stories, they will appear here in a scrollable feed.</p>
-    <p style="margin-top:18px"><a class="platform-btn" href="/admin/articles/new">Post the first story</a></p>
+    <p>Once verified independent journalists publish stories, they will appear here in a scrollable feed.</p>
+    <p style="margin-top:18px"><a class="platform-btn" href="/search">Search stories</a></p>
   </div>
   <% } %>
 </main>
