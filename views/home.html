@@ -44,93 +44,8 @@
   <style>
     body { background: #fff; }
 
-    body.home-youtube .site-header {
-      background: #fff;
-      color: #0f0f0f;
-      border-bottom: 0;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    body.home-youtube .header-top {
-      max-width: 1600px;
-      height: 64px;
-      padding: 0 26px;
-      gap: 18px;
-      display: grid;
-      grid-template-columns: 240px minmax(280px, 720px) 1fr auto;
-    }
-
-    body.home-youtube .site-logo .wordmark {
-      color: #0f0f0f;
-      font-family: var(--serif);
-      font-size: 1.25rem;
-      letter-spacing: 0;
-    }
-
-    body.home-youtube .site-logo .tagline {
-      color: var(--accent);
-      font-size: 0.55rem;
-    }
-
-    body.home-youtube .header-search {
-      max-width: none;
-      width: 100%;
-    }
-
-    body.home-youtube .header-search form {
-      height: 42px;
-      border: 1px solid #d3d3d3;
-      border-radius: 999px;
-      background: #fff;
-      overflow: hidden;
-    }
-
-    body.home-youtube .header-search input {
-      color: #0f0f0f;
-      font-size: 1rem;
-      padding: 0 18px;
-    }
-
-    body.home-youtube .header-search input::placeholder { color: #606060; }
-
-    body.home-youtube .header-search button {
-      width: 64px;
-      height: 42px;
-      background: #f8f8f8;
-      border-left: 1px solid #d3d3d3;
-      color: #0f0f0f;
-      font-size: 1.2rem;
-      padding: 0;
-    }
-
-    body.home-youtube .header-date {
-      color: #606060;
-      justify-self: end;
-    }
-
-    body.home-youtube .header-account a {
-      background: #f2f2f2;
-      border: 0;
-      border-radius: 999px;
-      color: #0f0f0f;
-      font-size: 0.78rem;
-      padding: 9px 14px;
-      letter-spacing: 0.04em;
-    }
-
-    body.home-youtube .header-account a:last-child {
-      background: #0f0f0f;
-      color: #fff;
-    }
-
-    body.home-youtube .site-nav {
-      display: none;
-    }
-
     .youtube-home {
-      max-width: 1600px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 18px 26px 64px;
     }
@@ -142,7 +57,7 @@
       padding: 0 0 30px;
       scrollbar-width: none;
       position: sticky;
-      top: 64px;
+      top: 109px;
       z-index: 20;
       background: #fff;
     }
@@ -171,7 +86,7 @@
     .video-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      column-gap: 20px;
+      column-gap: 24px;
       row-gap: 56px;
       align-items: start;
     }
@@ -319,41 +234,19 @@
       margin-bottom: 8px;
     }
 
-    @media (min-width: 1500px) {
-      .video-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-
     @media (max-width: 1100px) {
-      body.home-youtube .header-top {
-        grid-template-columns: 200px minmax(220px, 1fr) auto;
-      }
-      body.home-youtube .header-date {
-        display: none;
-      }
       .video-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 720px) {
-      body.home-youtube .header-top {
-        height: auto;
-        grid-template-columns: 1fr;
-        padding: 10px 12px;
-        gap: 10px;
-      }
-      body.home-youtube .header-account {
-        justify-content: flex-start;
-        max-width: none;
-      }
       .youtube-home {
         padding: 12px 12px 40px;
       }
 
       .topic-strip {
-        top: 118px;
+        top: 103px;
         gap: 8px;
         padding-bottom: 18px;
       }
@@ -370,7 +263,7 @@
     }
   </style>
 </head>
-<body class="home-youtube">
+<body>
 
 <%- include('partials/header.html') %>
 
