@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Set Up Account - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="auth-page">
+  <section class="auth-panel">
+    <div class="auth-kicker">Final Step</div>
+    <h1>Create User ID</h1>
+    <p class="auth-copy">Your email is verified. Create a user ID and password for future login.</p>
+
+    <% if (error) { %>
+      <div class="auth-alert auth-alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/setup-account" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>
+        <span>Display Name</span>
+        <input type="text" name="name" value="<%= form.name || user.name || '' %>" required autocomplete="name">
+      </label>
+      <label>
+        <span>User ID</span>
+        <input type="text" name="username" value="<%= form.username || '' %>" required minlength="3" maxlength="24" pattern="[a-zA-Z0-9_]{3,24}" autocomplete="username">
+      </label>
+      <label>
+        <span>Password</span>
+        <input type="password" name="password" required minlength="10" autocomplete="new-password">
+      </label>
+      <button type="submit">Complete Account</button>
+    </form>
+  </section>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

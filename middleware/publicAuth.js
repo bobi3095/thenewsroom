@@ -10,8 +10,10 @@ function signPublicUser(user) {
     {
       id: user.id,
       email: user.email,
+      username: user.username || '',
       name: user.name,
       verified: !!user.verified,
+      setupComplete: !!user.setupComplete,
       type: 'public'
     },
     JWT_SECRET,
@@ -33,8 +35,10 @@ async function publicUserLocals(req, res, next) {
     res.locals.currentUser = {
       id: user.id,
       email: user.email,
+      username: user.username || '',
       name: user.name,
-      verified: !!user.verified
+      verified: !!user.verified,
+      setupComplete: !!user.setupComplete
     };
   } catch {
     res.clearCookie(USER_COOKIE, cookieOptions);

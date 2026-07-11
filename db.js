@@ -49,12 +49,19 @@ async function initPostgres() {
 
     CREATE TABLE IF NOT EXISTS public_users (
       id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE,
       email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      name TEXT NOT NULL,
+      password TEXT NOT NULL DEFAULT '',
+      name TEXT NOT NULL DEFAULT '',
       verified BOOLEAN DEFAULT false,
+      setup_complete BOOLEAN DEFAULT false,
+      auth_provider TEXT DEFAULT 'email',
+      google_id TEXT UNIQUE,
       verification_token TEXT,
       verification_expires TIMESTAMPTZ,
+      otp_hash TEXT,
+      otp_expires TIMESTAMPTZ,
+      otp_attempts INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
@@ -85,10 +92,22 @@ async function initPostgres() {
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS cover_position TEXT DEFAULT 'center center';
   `).catch(() => {});
   await pool.query(`
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS username TEXT;
+    ALTER TABLE public_users ALTER COLUMN password SET DEFAULT '';
+    ALTER TABLE public_users ALTER COLUMN name SET DEFAULT '';
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS setup_complete BOOLEAN DEFAULT false;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'email';
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS google_id TEXT;
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_token TEXT;
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS otp_hash TEXT;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS otp_expires TIMESTAMPTZ;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS otp_attempts INTEGER DEFAULT 0;
+    UPDATE public_users SET setup_complete=true WHERE password <> '' AND setup_complete=false;
   `).catch(() => {});
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS public_users_username_unique ON public_users(username) WHERE username IS NOT NULL').catch(() => {});
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS public_users_google_id_unique ON public_users(google_id) WHERE google_id IS NOT NULL').catch(() => {});
 
   // Seed admin
   const { rows } = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
@@ -394,6 +413,23 @@ const db = {
     return (lowdb.data.publicUsers || []).find(u => u.email === normalized) || null;
   },
 
+  async getPublicUserByUsername(username) {
+    const normalized = normalizeUsername(username);
+    if (!normalized) return null;
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT * FROM public_users WHERE username=$1', [normalized]);
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.publicUsers || []).find(u => u.username === normalized) || null;
+  },
+
+  async getPublicUserByLogin(login) {
+    const value = String(login || '').trim();
+    if (!value) return null;
+    return value.includes('@') ? db.getPublicUserByEmail(value) : db.getPublicUserByUsername(value);
+  },
+
   async getPublicUserById(id) {
     if (isPostgres) {
       const { rows } = await pool.query('SELECT * FROM public_users WHERE id=$1', [id]);
@@ -444,6 +480,142 @@ const db = {
       createdAt: new Date().toISOString()
     };
     lowdb.data.publicUsers.push(user);
+    lowdb.write();
+    return user;
+  },
+
+  async createOrUpdatePublicUserOtp(email, otpHash, expiresAt) {
+    const normalized = normalizeEmail(email);
+    const defaultName = normalized.split('@')[0] || 'Reader';
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        INSERT INTO public_users (email,password,name,verified,setup_complete,auth_provider,otp_hash,otp_expires,otp_attempts)
+        VALUES ($1,'',$2,false,false,'email',$3,$4,0)
+        ON CONFLICT (email) DO UPDATE SET
+          otp_hash=EXCLUDED.otp_hash,
+          otp_expires=EXCLUDED.otp_expires,
+          otp_attempts=0
+        RETURNING *
+      `, [normalized, defaultName, otpHash, expiresAt]);
+      return pgToPublicUser(rows[0]);
+    }
+    const lowdb = getLowdb();
+    lowdb.data.publicUsers ||= [];
+    let user = lowdb.data.publicUsers.find(u => u.email === normalized);
+    if (!user) {
+      const id = Math.max(0, ...lowdb.data.publicUsers.map(u => u.id)) + 1;
+      user = {
+        id,
+        email: normalized,
+        username: '',
+        password: '',
+        name: defaultName,
+        verified: false,
+        setupComplete: false,
+        authProvider: 'email',
+        createdAt: new Date().toISOString()
+      };
+      lowdb.data.publicUsers.push(user);
+    }
+    user.otpHash = otpHash;
+    user.otpExpires = expiresAt;
+    user.otpAttempts = 0;
+    lowdb.write();
+    return user;
+  },
+
+  async verifyPublicUserOtp(email, otp) {
+    const normalized = normalizeEmail(email);
+    const otpHash = hashToken(otp);
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT * FROM public_users WHERE email=$1', [normalized]);
+      const user = rows[0];
+      if (!user || !user.otp_hash || !user.otp_expires) return null;
+      if (new Date(user.otp_expires).getTime() < Date.now()) return null;
+      if ((user.otp_attempts || 0) >= 5) return null;
+      if (user.otp_hash !== otpHash) {
+        await pool.query('UPDATE public_users SET otp_attempts=otp_attempts+1 WHERE id=$1', [user.id]);
+        return null;
+      }
+      const { rows: updated } = await pool.query(`
+        UPDATE public_users
+        SET verified=true, otp_hash=NULL, otp_expires=NULL, otp_attempts=0
+        WHERE id=$1 RETURNING *
+      `, [user.id]);
+      return updated[0] ? pgToPublicUser(updated[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const user = (lowdb.data.publicUsers || []).find(u => u.email === normalized);
+    if (!user || !user.otpHash || !user.otpExpires) return null;
+    if (new Date(user.otpExpires).getTime() < Date.now()) return null;
+    if ((user.otpAttempts || 0) >= 5) return null;
+    if (user.otpHash !== otpHash) {
+      user.otpAttempts = (user.otpAttempts || 0) + 1;
+      lowdb.write();
+      return null;
+    }
+    user.verified = true;
+    user.otpHash = null;
+    user.otpExpires = null;
+    user.otpAttempts = 0;
+    lowdb.write();
+    return user;
+  },
+
+  async completePublicUserSetup(id, data) {
+    const username = normalizeUsername(data.username);
+    const name = String(data.name || '').trim();
+    if (!username || !name || !data.password) return null;
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        UPDATE public_users
+        SET username=$1,name=$2,password=$3,setup_complete=true
+        WHERE id=$4 RETURNING *
+      `, [username, name, data.password, id]);
+      return rows[0] ? pgToPublicUser(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const user = (lowdb.data.publicUsers || []).find(u => u.id === id);
+    if (!user) return null;
+    user.username = username;
+    user.name = name;
+    user.password = data.password;
+    user.setupComplete = true;
+    lowdb.write();
+    return user;
+  },
+
+  async createOrUpdateGooglePublicUser(profile) {
+    const email = normalizeEmail(profile.email);
+    if (!email) return null;
+    const name = String(profile.name || email.split('@')[0] || 'Reader').trim();
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        INSERT INTO public_users (email,password,name,verified,setup_complete,auth_provider,google_id)
+        VALUES ($1,'',$2,true,true,'google',$3)
+        ON CONFLICT (email) DO UPDATE SET
+          name=COALESCE(NULLIF(public_users.name,''), EXCLUDED.name),
+          verified=true,
+          setup_complete=true,
+          auth_provider='google',
+          google_id=EXCLUDED.google_id
+        RETURNING *
+      `, [email, name, profile.googleId || null]);
+      return pgToPublicUser(rows[0]);
+    }
+    const lowdb = getLowdb();
+    lowdb.data.publicUsers ||= [];
+    let user = lowdb.data.publicUsers.find(u => u.email === email);
+    if (!user) {
+      const id = Math.max(0, ...lowdb.data.publicUsers.map(u => u.id)) + 1;
+      user = { id, email, username: '', password: '', name, createdAt: new Date().toISOString() };
+      lowdb.data.publicUsers.push(user);
+    }
+    user.name ||= name;
+    user.verified = true;
+    user.setupComplete = true;
+    user.authProvider = 'google';
+    user.googleId = profile.googleId || user.googleId || '';
     lowdb.write();
     return user;
   },
@@ -591,18 +763,29 @@ function pgToUser(row) {
 function pgToPublicUser(row) {
   return {
     id: row.id,
+    username: row.username || '',
     email: row.email,
     password: row.password,
     name: row.name,
     verified: row.verified,
+    setupComplete: row.setup_complete,
+    authProvider: row.auth_provider || 'email',
+    googleId: row.google_id || '',
     verificationToken: row.verification_token,
     verificationExpires: row.verification_expires,
+    otpHash: row.otp_hash,
+    otpExpires: row.otp_expires,
+    otpAttempts: row.otp_attempts || 0,
     createdAt: row.created_at
   };
 }
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
+}
+
+function normalizeUsername(username) {
+  return String(username || '').trim().toLowerCase();
 }
 
 function hashToken(token) {
@@ -623,6 +806,12 @@ function initLowdb() {
   _lowdb.data.publicUsers ||= [];
   _lowdb.data.articleMetrics ||= [];
   _lowdb.data.publicUserFollows ||= [];
+  _lowdb.data.publicUsers.forEach(user => {
+    user.username ||= '';
+    user.setupComplete = user.setupComplete !== undefined ? user.setupComplete : !!user.password;
+    user.authProvider ||= 'email';
+    user.otpAttempts ||= 0;
+  });
   if (!_lowdb.data.users?.length) {
     if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
       throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');

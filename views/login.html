@@ -14,17 +14,27 @@
   <section class="auth-panel">
     <div class="auth-kicker">Reader Account</div>
     <h1>Sign In</h1>
-    <p class="auth-copy">Use your email and password to access your reader account.</p>
+    <p class="auth-copy">Use Google, or sign in with your user ID/email and password.</p>
 
     <% if (error) { %>
       <div class="auth-alert auth-alert-error"><%= error %></div>
     <% } %>
+    <% if (typeof googleMessage !== 'undefined' && googleMessage) { %>
+      <div class="auth-alert auth-alert-error"><%= googleMessage %></div>
+    <% } %>
+
+    <a class="google-auth-btn" href="/auth/google">
+      <span>G</span>
+      Continue with Google
+    </a>
+
+    <div class="auth-divider"><span>or</span></div>
 
     <form method="POST" action="/login" class="auth-form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label>
-        <span>Email</span>
-        <input type="email" name="email" value="<%= form.email || '' %>" required autocomplete="email">
+        <span>User ID or Email</span>
+        <input type="text" name="login" value="<%= form.login || form.email || '' %>" required autocomplete="username">
       </label>
       <label>
         <span>Password</span>
@@ -33,7 +43,7 @@
       <button type="submit">Sign In</button>
     </form>
 
-    <p class="auth-switch">New here? <a href="/register">Create an account</a></p>
+    <p class="auth-switch">New here? <a href="/register">Verify email and create account</a></p>
   </section>
 </main>
 

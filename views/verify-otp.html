@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Verify OTP - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="auth-page">
+  <section class="auth-panel">
+    <div class="auth-kicker">Email Verification</div>
+    <h1>Enter OTP</h1>
+    <p class="auth-copy">We sent a 6-digit code to <strong><%= email %></strong>. The OTP expires in 10 minutes.</p>
+
+    <% if (error) { %>
+      <div class="auth-alert auth-alert-error"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/verify-otp" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="email" value="<%= email %>">
+      <label>
+        <span>OTP</span>
+        <input type="text" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+      </label>
+      <button type="submit">Verify OTP</button>
+    </form>
+
+    <% if (devOtp) { %>
+      <div class="auth-dev-link">
+        <span>Development OTP</span>
+        <strong><%= devOtp %></strong>
+      </div>
+    <% } %>
+
+    <p class="auth-switch">Wrong email? <a href="/register">Start again</a></p>
+  </section>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

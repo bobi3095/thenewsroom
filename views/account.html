@@ -15,7 +15,7 @@
     <div>
       <div class="auth-kicker">Reader Account</div>
       <h1><%= user.name %></h1>
-      <p><%= user.email %></p>
+      <p><%= user.email %><% if (user.username) { %> · @<%= user.username %><% } %></p>
     </div>
     <span class="account-status <%= user.verified ? 'is-verified' : 'is-pending' %>">
       <%= user.verified ? 'Verified' : 'Email pending' %>

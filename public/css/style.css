@@ -1204,6 +1204,53 @@ main { animation: fadeIn 0.3s ease; }
   font-weight: 700;
 }
 
+.google-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--ink);
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin: 18px 0;
+}
+
+.google-auth-btn span {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: #4285f4;
+  font-weight: 900;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 12px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
 .auth-dev-link {
   background: var(--tag-bg);
   border-left: 3px solid var(--accent);
