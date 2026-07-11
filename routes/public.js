@@ -4,7 +4,7 @@ const db = require('../db');
 const { cacheMiddleware, KEYS } = require('../middleware/cache');
 const { sanitizeArticleHtml } = require('../middleware/sanitize');
 const { csrfProtection } = require('../middleware/security');
-const { requireVerifiedPublicUser } = require('../middleware/publicAuth');
+const { requirePublicUser } = require('../middleware/publicAuth');
 
 // All categories including new ones
 const ALL_CATEGORIES = ['Politics', 'Technology', 'Sports', 'World News', 'Uncovered', 'Opinion', 'India', 'Data', 'Law', 'Govt Schemes', 'Education'];
@@ -108,12 +108,12 @@ router.get('/journalist/:id', async (req, res) => {
   }
 });
 
-router.post('/journalist/:id/follow', requireVerifiedPublicUser, csrfProtection, async (req, res) => {
+router.post('/journalist/:id/follow', requirePublicUser, csrfProtection, async (req, res) => {
   await db.followAuthor(req.publicUser.id, req.params.id);
   res.redirect('/journalist/' + req.params.id);
 });
 
-router.post('/journalist/:id/unfollow', requireVerifiedPublicUser, csrfProtection, async (req, res) => {
+router.post('/journalist/:id/unfollow', requirePublicUser, csrfProtection, async (req, res) => {
   await db.unfollowAuthor(req.publicUser.id, req.params.id);
   res.redirect('/journalist/' + req.params.id);
 });

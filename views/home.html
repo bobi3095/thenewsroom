@@ -279,28 +279,26 @@
   <% if (feedArticles.length > 0) { %>
   <div class="video-grid">
     <% feedArticles.forEach(a => { %>
-    <article class="video-card">
-      <a href="/article/<%= a.slug %>" class="video-thumb" data-track-article="<%= a.id %>">
+    <a href="/article/<%= a.slug %>" class="video-card" data-track-article="<%= a.id %>">
+      <div class="video-thumb">
         <% if (a.image) { %>
           <img src="<%= a.image %>" alt="<%= a.title %>">
         <% } else { %>
           <div class="video-placeholder">TNR</div>
         <% } %>
         <span class="article-badge"><%= a.category %></span>
-      </a>
+      </div>
       <div class="video-info">
-        <a href="/journalist/<%= a.authorId %>" class="channel-avatar" aria-label="View <%= a.author || 'journalist' %> profile">
+        <div class="channel-avatar">
           <% if (a.authorAvatar) { %>
             <img src="<%= a.authorAvatar %>" alt="<%= a.author || 'Author' %>">
           <% } else { %>
             <%= a.author ? a.author[0].toUpperCase() : 'A' %>
           <% } %>
-        </a>
+        </div>
         <div>
-          <a href="/article/<%= a.slug %>" data-track-article="<%= a.id %>">
-            <h2 class="video-title"><%= a.title %></h2>
-          </a>
-          <a href="/journalist/<%= a.authorId %>" class="video-channel"><%= a.author || 'Independent Journalist' %></a>
+          <h2 class="video-title"><%= a.title %></h2>
+          <div class="video-channel"><%= a.author || 'Independent Journalist' %></div>
           <div class="video-stats">
             <%= a.views || 0 %> views &bull;
             <%= new Date(a.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric' }) %>
@@ -308,7 +306,7 @@
         </div>
         <button class="card-menu" type="button" aria-label="More options" onclick="event.preventDefault(); event.stopPropagation();">⋮</button>
       </div>
-    </article>
+    </a>
     <% }) %>
   </div>
   <% } else { %>
