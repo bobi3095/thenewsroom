@@ -38,19 +38,23 @@ router.get('/logout', (req, res) => { res.clearCookie('token', cookieOptions); r
 // ── DASHBOARD ─────────────────────────────────────────────────────
 router.get('/', authMiddleware, async (req, res) => {
   const allArticles = await db.getArticles({});
+  const allVideos = await db.getVideos({});
 
   if (req.user.role === 'author') {
     // Author sees only their own articles
     const myArticles = allArticles.filter(a => a.authorId === req.user.id);
+    const myVideos = allVideos.filter(v => v.authorId === req.user.id);
     const stats = {
       total: myArticles.length,
       published: myArticles.filter(a => a.status === 'published').length,
       drafts: myArticles.filter(a => a.status === 'draft').length,
-      totalViews: myArticles.reduce((s, a) => s + (a.views||0), 0)
+      videos: myVideos.length,
+      totalViews: myArticles.reduce((s, a) => s + (a.views||0), 0) + myVideos.reduce((s, v) => s + (v.views||0), 0)
     };
     return res.render('admin/author-dashboard', {
       user: req.user,
       articles: myArticles,
+      videos: myVideos,
       stats,
       categories: db.categories,
       cacheStats: getCacheStats()
@@ -61,11 +65,12 @@ router.get('/', authMiddleware, async (req, res) => {
   const allUsers = await db.getAllUsers();
   const published = allArticles.filter(a => a.status === 'published').length;
   const drafts = allArticles.filter(a => a.status === 'draft').length;
-  const totalViews = allArticles.reduce((s, a) => s + (a.views||0), 0);
+  const totalViews = allArticles.reduce((s, a) => s + (a.views||0), 0) + allVideos.reduce((s, v) => s + (v.views||0), 0);
   res.render('admin/dashboard', {
     user: req.user,
     articles: allArticles.slice(0, 20),
-    stats: { total: allArticles.length, published, drafts, totalViews, authors: allUsers.filter(u => u.role === 'author').length },
+    videos: allVideos.slice(0, 20),
+    stats: { total: allArticles.length, published, drafts, videos: allVideos.length, totalViews, authors: allUsers.filter(u => u.role === 'author').length },
     categories: db.categories
   });
 });

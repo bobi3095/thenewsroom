@@ -93,7 +93,8 @@ async function deleteFile(url) {
       api_key: process.env.CLOUDINARY_API_KEY,
       api_secret: process.env.CLOUDINARY_API_SECRET
     });
-    const result = await cloudinary.uploader.destroy(publicId);
+    const resourceType = /\.(mp4|webm|mov)$/i.test(url) || url.includes('/video/upload/') ? 'video' : 'image';
+    const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
     console.log('🗑️  Cloudinary delete:', publicId, result.result);
   } catch(err) {
     console.error('Cloudinary delete error:', err.message);

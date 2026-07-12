@@ -47,6 +47,21 @@ async function initPostgres() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS videos (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      category TEXT,
+      video_url TEXT NOT NULL,
+      author TEXT,
+      author_id INTEGER,
+      status TEXT DEFAULT 'draft',
+      views INTEGER DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS public_users (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE,
@@ -236,6 +251,97 @@ const db = {
   },
 
   // ── USERS ─────────────────────────────────────────────────────────
+  async getVideos(filter = {}) {
+    if (isPostgres) {
+      let q = `SELECT v.*, u.avatar as author_avatar, u.bio as author_bio
+               FROM videos v LEFT JOIN users u ON v.author_id = u.id`;
+      const conditions = [], vals = [];
+      if (filter.status) { conditions.push(`v.status = $${vals.length + 1}`); vals.push(filter.status); }
+      if (filter.category) { conditions.push(`v.category = $${vals.length + 1}`); vals.push(filter.category); }
+      if (filter.slug) { conditions.push(`v.slug = $${vals.length + 1}`); vals.push(filter.slug); }
+      if (filter.id) { conditions.push(`v.id = $${vals.length + 1}`); vals.push(filter.id); }
+      if (filter.authorId) { conditions.push(`v.author_id = $${vals.length + 1}`); vals.push(filter.authorId); }
+      if (conditions.length) q += ' WHERE ' + conditions.join(' AND ');
+      q += ' ORDER BY v.created_at DESC';
+      const { rows } = await pool.query(q, vals);
+      return rows.map(pgToVideo);
+    }
+    const lowdb = getLowdb();
+    let videos = lowdb.data.videos || [];
+    if (filter.status) videos = videos.filter(v => v.status === filter.status);
+    if (filter.category) videos = videos.filter(v => v.category === filter.category);
+    if (filter.slug) videos = videos.filter(v => v.slug === filter.slug);
+    if (filter.id) videos = videos.filter(v => v.id === filter.id);
+    if (filter.authorId) videos = videos.filter(v => v.authorId === filter.authorId);
+    return videos.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(v => {
+      const user = lowdb.data.users.find(u => u.id === v.authorId);
+      return { ...v, authorAvatar: user?.avatar || '', authorBio: user?.bio || '' };
+    });
+  },
+
+  async getVideo(filter) {
+    const videos = await db.getVideos(filter);
+    return videos[0] || null;
+  },
+
+  async createVideo(data) {
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        INSERT INTO videos (title,slug,description,category,video_url,author,author_id,status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+      `, [data.title, data.slug, data.description || '', data.category || '', data.videoUrl, data.author, data.authorId, data.status || 'draft']);
+      return pgToVideo(rows[0]);
+    }
+    const lowdb = getLowdb();
+    lowdb.data.videos ||= [];
+    const id = Math.max(0, ...lowdb.data.videos.map(v => v.id)) + 1;
+    const video = { id, ...data, views: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    lowdb.data.videos.push(video);
+    lowdb.write();
+    return video;
+  },
+
+  async updateVideo(id, data) {
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        UPDATE videos SET title=$1,slug=$2,description=$3,category=$4,video_url=$5,status=$6,updated_at=NOW()
+        WHERE id=$7 RETURNING *
+      `, [data.title, data.slug, data.description || '', data.category || '', data.videoUrl, data.status || 'draft', id]);
+      return rows[0] ? pgToVideo(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    const idx = (lowdb.data.videos || []).findIndex(v => v.id === id);
+    if (idx !== -1) {
+      lowdb.data.videos[idx] = { ...lowdb.data.videos[idx], ...data, updatedAt: new Date().toISOString() };
+      lowdb.write();
+      return lowdb.data.videos[idx];
+    }
+    return null;
+  },
+
+  async deleteVideo(id) {
+    if (isPostgres) {
+      await pool.query('DELETE FROM videos WHERE id=$1', [id]);
+      return;
+    }
+    const lowdb = getLowdb();
+    lowdb.data.videos = (lowdb.data.videos || []).filter(v => v.id !== id);
+    lowdb.write();
+  },
+
+  async incrementVideoViews(id) {
+    if (isPostgres) {
+      await pool.query('UPDATE videos SET views = views + 1 WHERE id=$1', [id]);
+      return;
+    }
+    const lowdb = getLowdb();
+    const video = (lowdb.data.videos || []).find(v => v.id === id);
+    if (video) {
+      video.views = (video.views || 0) + 1;
+      lowdb.write();
+    }
+  },
+
   async getUser(username) {
     if (isPostgres) {
       const { rows } = await pool.query('SELECT * FROM users WHERE username=$1', [username]);
@@ -780,6 +886,25 @@ function pgToPublicUser(row) {
   };
 }
 
+function pgToVideo(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    description: row.description || '',
+    category: row.category || '',
+    videoUrl: row.video_url,
+    author: row.author,
+    authorId: row.author_id,
+    status: row.status,
+    views: row.views || 0,
+    authorAvatar: row.author_avatar || '',
+    authorBio: row.author_bio || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -806,6 +931,7 @@ function initLowdb() {
   _lowdb.data.publicUsers ||= [];
   _lowdb.data.articleMetrics ||= [];
   _lowdb.data.publicUserFollows ||= [];
+  _lowdb.data.videos ||= [];
   _lowdb.data.publicUsers.forEach(user => {
     user.username ||= '';
     user.setupComplete = user.setupComplete !== undefined ? user.setupComplete : !!user.password;
