@@ -93,6 +93,30 @@ async function initPostgres() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       PRIMARY KEY (public_user_id, author_id)
     );
+
+    CREATE TABLE IF NOT EXISTS article_likes (
+      public_user_id INTEGER NOT NULL REFERENCES public_users(id) ON DELETE CASCADE,
+      article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (public_user_id, article_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS article_comments (
+      id SERIAL PRIMARY KEY,
+      article_id INTEGER NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+      public_user_id INTEGER NOT NULL REFERENCES public_users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL CHECK (char_length(trim(body)) BETWEEN 1 AND 1000),
+      status TEXT DEFAULT 'visible' CHECK (status IN ('visible', 'deleted')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS article_comment_likes (
+      public_user_id INTEGER NOT NULL REFERENCES public_users(id) ON DELETE CASCADE,
+      comment_id INTEGER NOT NULL REFERENCES article_comments(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (public_user_id, comment_id)
+    );
   `);
 
   // Add new columns if upgrading from old schema
@@ -123,6 +147,10 @@ async function initPostgres() {
   `).catch(() => {});
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS public_users_username_unique ON public_users(username) WHERE username IS NOT NULL').catch(() => {});
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS public_users_google_id_unique ON public_users(google_id) WHERE google_id IS NOT NULL').catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_article_likes_article_id ON article_likes(article_id)').catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_article_comments_article_id_created_at ON article_comments(article_id, created_at DESC)').catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_article_comments_status ON article_comments(status)').catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_article_comment_likes_comment_id ON article_comment_likes(comment_id)').catch(() => {});
 
   // Seed admin
   const { rows } = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
@@ -816,6 +844,242 @@ const db = {
       .sort((a, b) => b.trending.score - a.trending.score || new Date(b.createdAt) - new Date(a.createdAt));
   },
 
+  async getArticleLikeSummary(articleId, publicUserId = null) {
+    const id = parseInt(articleId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    if (!id) return { count: 0, liked: false };
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        SELECT
+          COUNT(*)::int AS count,
+          BOOL_OR(public_user_id = $2)::boolean AS liked
+        FROM article_likes
+        WHERE article_id = $1
+      `, [id, readerId || 0]);
+      return { count: rows[0]?.count || 0, liked: !!rows[0]?.liked };
+    }
+    const lowdb = getLowdb();
+    const likes = (lowdb.data.articleLikes || []).filter(l => l.articleId === id);
+    return {
+      count: likes.length,
+      liked: readerId ? likes.some(l => l.publicUserId === readerId) : false
+    };
+  },
+
+  async toggleArticleLike(articleId, publicUserId) {
+    const id = parseInt(articleId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    if (!id || !readerId) return { liked: false, count: 0 };
+    if (isPostgres) {
+      const existing = await pool.query(
+        'SELECT 1 FROM article_likes WHERE article_id=$1 AND public_user_id=$2',
+        [id, readerId]
+      );
+      if (existing.rows.length) {
+        await pool.query('DELETE FROM article_likes WHERE article_id=$1 AND public_user_id=$2', [id, readerId]);
+      } else {
+        await pool.query(
+          'INSERT INTO article_likes (article_id, public_user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+          [id, readerId]
+        );
+      }
+      return db.getArticleLikeSummary(id, readerId);
+    }
+    const lowdb = getLowdb();
+    lowdb.data.articleLikes ||= [];
+    const idx = lowdb.data.articleLikes.findIndex(l => l.articleId === id && l.publicUserId === readerId);
+    if (idx >= 0) lowdb.data.articleLikes.splice(idx, 1);
+    else lowdb.data.articleLikes.push({ articleId: id, publicUserId: readerId, createdAt: new Date().toISOString() });
+    lowdb.write();
+    return db.getArticleLikeSummary(id, readerId);
+  },
+
+  async getArticleComments(articleId, sort = 'top', publicUserId = null) {
+    const id = parseInt(articleId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    const safeSort = ['top', 'newest', 'oldest'].includes(sort) ? sort : 'top';
+    if (!id) return [];
+    if (isPostgres) {
+      const orderBy = safeSort === 'newest'
+        ? 'c.created_at DESC'
+        : safeSort === 'oldest'
+          ? 'c.created_at ASC'
+          : 'like_count DESC, c.created_at DESC';
+      const { rows } = await pool.query(`
+        SELECT c.*, pu.name, pu.email,
+          COUNT(cl.public_user_id)::int AS like_count,
+          BOOL_OR(cl.public_user_id = $2)::boolean AS liked_by_me
+        FROM article_comments c
+        JOIN public_users pu ON pu.id = c.public_user_id
+        LEFT JOIN article_comment_likes cl ON cl.comment_id = c.id
+        WHERE c.article_id = $1 AND c.status = 'visible'
+        GROUP BY c.id, pu.name, pu.email
+        ORDER BY ${orderBy}
+      `, [id, readerId || 0]);
+      return rows.map(pgToArticleComment);
+    }
+    const lowdb = getLowdb();
+    const commentLikes = lowdb.data.articleCommentLikes || [];
+    const comments = (lowdb.data.articleComments || [])
+      .filter(c => c.articleId === id && c.status === 'visible')
+      .map(c => {
+        const user = (lowdb.data.publicUsers || []).find(u => u.id === c.publicUserId);
+        const likes = commentLikes.filter(l => l.commentId === c.id);
+        return {
+          ...c,
+          userName: user?.name || user?.email || 'Reader',
+          userEmail: user?.email || '',
+          likeCount: likes.length,
+          likedByMe: readerId ? likes.some(l => l.publicUserId === readerId) : false
+        };
+      });
+    if (safeSort === 'newest') return comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    if (safeSort === 'oldest') return comments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    return comments.sort((a, b) => b.likeCount - a.likeCount || new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  async getArticleCommentSummary(articleId) {
+    const id = parseInt(articleId, 10);
+    if (!id) return { count: 0 };
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        "SELECT COUNT(*)::int AS count FROM article_comments WHERE article_id=$1 AND status='visible'",
+        [id]
+      );
+      return { count: rows[0]?.count || 0 };
+    }
+    const lowdb = getLowdb();
+    return { count: (lowdb.data.articleComments || []).filter(c => c.articleId === id && c.status === 'visible').length };
+  },
+
+  async createArticleComment(articleId, publicUserId, body) {
+    const id = parseInt(articleId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    const cleanBody = String(body || '').trim().slice(0, 1000);
+    if (!id || !readerId || cleanBody.length < 1) return null;
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        INSERT INTO article_comments (article_id, public_user_id, body, status)
+        VALUES ($1,$2,$3,'visible') RETURNING *
+      `, [id, readerId, cleanBody]);
+      return rows[0] ? pgToArticleComment(rows[0]) : null;
+    }
+    const lowdb = getLowdb();
+    lowdb.data.articleComments ||= [];
+    const comment = {
+      id: Math.max(0, ...lowdb.data.articleComments.map(c => c.id)) + 1,
+      articleId: id,
+      publicUserId: readerId,
+      body: cleanBody,
+      status: 'visible',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    lowdb.data.articleComments.push(comment);
+    lowdb.write();
+    return comment;
+  },
+
+  async deleteOwnArticleComment(commentId, publicUserId) {
+    const id = parseInt(commentId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    if (!id || !readerId) return null;
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        UPDATE article_comments
+        SET status='deleted', updated_at=NOW()
+        WHERE id=$1 AND public_user_id=$2
+        RETURNING article_id
+      `, [id, readerId]);
+      return rows[0]?.article_id || null;
+    }
+    const lowdb = getLowdb();
+    const comment = (lowdb.data.articleComments || []).find(c => c.id === id && c.publicUserId === readerId);
+    if (!comment) return null;
+    comment.status = 'deleted';
+    comment.updatedAt = new Date().toISOString();
+    lowdb.write();
+    return comment.articleId;
+  },
+
+  async toggleArticleCommentLike(commentId, publicUserId) {
+    const id = parseInt(commentId, 10);
+    const readerId = parseInt(publicUserId, 10);
+    if (!id || !readerId) return null;
+    if (isPostgres) {
+      const existing = await pool.query(
+        'SELECT 1 FROM article_comment_likes WHERE comment_id=$1 AND public_user_id=$2',
+        [id, readerId]
+      );
+      if (existing.rows.length) {
+        await pool.query('DELETE FROM article_comment_likes WHERE comment_id=$1 AND public_user_id=$2', [id, readerId]);
+      } else {
+        await pool.query(
+          'INSERT INTO article_comment_likes (comment_id, public_user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+          [id, readerId]
+        );
+      }
+      const { rows } = await pool.query('SELECT article_id FROM article_comments WHERE id=$1', [id]);
+      return rows[0]?.article_id || null;
+    }
+    const lowdb = getLowdb();
+    lowdb.data.articleCommentLikes ||= [];
+    const idx = lowdb.data.articleCommentLikes.findIndex(l => l.commentId === id && l.publicUserId === readerId);
+    if (idx >= 0) lowdb.data.articleCommentLikes.splice(idx, 1);
+    else lowdb.data.articleCommentLikes.push({ commentId: id, publicUserId: readerId, createdAt: new Date().toISOString() });
+    lowdb.write();
+    return (lowdb.data.articleComments || []).find(c => c.id === id)?.articleId || null;
+  },
+
+  async getAllArticleComments() {
+    if (isPostgres) {
+      const { rows } = await pool.query(`
+        SELECT c.*, pu.name, pu.email, a.title AS article_title, a.slug AS article_slug,
+          COUNT(cl.public_user_id)::int AS like_count
+        FROM article_comments c
+        JOIN public_users pu ON pu.id = c.public_user_id
+        JOIN articles a ON a.id = c.article_id
+        LEFT JOIN article_comment_likes cl ON cl.comment_id = c.id
+        WHERE c.status = 'visible'
+        GROUP BY c.id, pu.name, pu.email, a.title, a.slug
+        ORDER BY c.created_at DESC
+      `);
+      return rows.map(pgToArticleComment);
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.articleComments || [])
+      .filter(c => c.status === 'visible')
+      .map(c => {
+        const user = (lowdb.data.publicUsers || []).find(u => u.id === c.publicUserId);
+        const article = (lowdb.data.articles || []).find(a => a.id === c.articleId);
+        return {
+          ...c,
+          userName: user?.name || user?.email || 'Reader',
+          userEmail: user?.email || '',
+          articleTitle: article?.title || 'Article',
+          articleSlug: article?.slug || '',
+          likeCount: (lowdb.data.articleCommentLikes || []).filter(l => l.commentId === c.id).length
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  },
+
+  async adminDeleteArticleComment(commentId) {
+    const id = parseInt(commentId, 10);
+    if (!id) return;
+    if (isPostgres) {
+      await pool.query("UPDATE article_comments SET status='deleted', updated_at=NOW() WHERE id=$1", [id]);
+      return;
+    }
+    const lowdb = getLowdb();
+    const comment = (lowdb.data.articleComments || []).find(c => c.id === id);
+    if (comment) {
+      comment.status = 'deleted';
+      comment.updatedAt = new Date().toISOString();
+      lowdb.write();
+    }
+  },
+
   async verifyPublicUser(id) {
     if (isPostgres) {
       const { rows } = await pool.query(
@@ -905,6 +1169,24 @@ function pgToVideo(row) {
   };
 }
 
+function pgToArticleComment(row) {
+  return {
+    id: row.id,
+    articleId: row.article_id,
+    publicUserId: row.public_user_id,
+    body: row.body,
+    status: row.status,
+    userName: row.name || row.email || 'Reader',
+    userEmail: row.email || '',
+    articleTitle: row.article_title || '',
+    articleSlug: row.article_slug || '',
+    likeCount: row.like_count || 0,
+    likedByMe: !!row.liked_by_me,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
@@ -932,6 +1214,9 @@ function initLowdb() {
   _lowdb.data.articleMetrics ||= [];
   _lowdb.data.publicUserFollows ||= [];
   _lowdb.data.videos ||= [];
+  _lowdb.data.articleLikes ||= [];
+  _lowdb.data.articleComments ||= [];
+  _lowdb.data.articleCommentLikes ||= [];
   _lowdb.data.publicUsers.forEach(user => {
     user.username ||= '';
     user.setupComplete = user.setupComplete !== undefined ? user.setupComplete : !!user.password;

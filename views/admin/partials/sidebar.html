@@ -14,6 +14,12 @@
     </a>
 
     <% if (user.role === 'admin') { %>
+    <a href="/admin/comments" class="<%= typeof activePage !== 'undefined' && activePage === 'comments' ? 'active' : '' %>">
+      <span class="icon">#</span> <span>Comments</span>
+    </a>
+    <% } %>
+
+    <% if (user.role === 'admin') { %>
     <div class="nav-section-label" style="margin-top:8px">Team</div>
     <a href="/admin/authors" class="<%= typeof activePage !== 'undefined' && activePage === 'authors' ? 'active' : '' %>">
       <span class="icon">👥</span> <span>Authors</span>

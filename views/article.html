@@ -84,6 +84,138 @@
     .share-item.telegram:hover { background: #0088cc; }
     .share-item.instagram:hover { background: #E1306C; }
     .share-item.copylink:hover { background: #1a1a1a; }
+    .discussion-panel {
+      margin-top: 34px;
+      padding-top: 26px;
+      border-top: 1px solid var(--border);
+    }
+    .article-like-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-top: 28px;
+    }
+    .article-like-btn,
+    .comment-action-btn,
+    .comment-delete-btn {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .article-like-btn {
+      border-radius: 999px;
+      padding: 10px 16px;
+    }
+    .article-like-btn.is-liked {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .comment-form textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      padding: 13px;
+      font: inherit;
+      line-height: 1.5;
+      margin-top: 12px;
+    }
+    .comment-form button {
+      margin-top: 10px;
+      border: none;
+      background: var(--ink);
+      color: white;
+      padding: 11px 18px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .comment-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0 12px;
+    }
+    .comment-filter {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .comment-filter.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: white;
+    }
+    .comment-item {
+      display: flex;
+      gap: 12px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .comment-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #4f6fd8;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 900;
+    }
+    .comment-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .comment-meta {
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-top: 2px;
+    }
+    .comment-text {
+      margin-top: 8px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.55;
+      color: var(--ink);
+    }
+    .comment-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .comment-action-btn,
+    .comment-delete-btn {
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.64rem;
+    }
+    .comment-action-btn.is-liked {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .comment-delete-btn {
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -162,6 +294,87 @@
       <div class="article-body">
         <%- article.content %>
       </div>
+
+      <div class="article-like-row">
+        <div style="font-size:0.88rem;color:var(--muted)">
+          <strong style="color:var(--ink)"><%= article.likeSummary.count %></strong>
+          <%= article.likeSummary.count === 1 ? 'like' : 'likes' %>
+        </div>
+        <% if (currentUser) { %>
+          <form method="POST" action="/article/<%= article.slug %>/like">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="article-like-btn <%= article.likeSummary.liked ? 'is-liked' : '' %>">
+              <%= article.likeSummary.liked ? 'Liked' : 'Like' %>
+            </button>
+          </form>
+        <% } else { %>
+          <a href="/login" class="article-like-btn" style="text-decoration:none">Login to Like</a>
+        <% } %>
+      </div>
+
+      <section id="discussion" class="discussion-panel">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:6px">Discussion</div>
+            <h2 style="font-family:var(--serif);font-size:1.55rem;margin:0">
+              <%= article.commentSummary.count %> <%= article.commentSummary.count === 1 ? 'Comment' : 'Comments' %>
+            </h2>
+          </div>
+        </div>
+
+        <% if (currentUser) { %>
+          <form method="POST" action="/article/<%= article.slug %>/comments" class="comment-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <textarea name="body" maxlength="1000" required placeholder="Add a public comment..."></textarea>
+            <button type="submit">Post Comment</button>
+          </form>
+        <% } else { %>
+          <div style="margin-top:14px;padding:16px;border:1px solid var(--border);background:#fafafa">
+            <p style="margin:0 0 10px;color:var(--muted)">Login with Google to like and comment on this article.</p>
+            <a href="/login" style="display:inline-flex;background:var(--ink);color:white;padding:10px 16px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Comment</a>
+          </div>
+        <% } %>
+
+        <div class="comment-filters">
+          <a class="comment-filter <%= commentSort === 'top' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=top#discussion">Top Comments</a>
+          <a class="comment-filter <%= commentSort === 'newest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=newest#discussion">Newest First</a>
+          <a class="comment-filter <%= commentSort === 'oldest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=oldest#discussion">Oldest First</a>
+        </div>
+
+        <% if (comments && comments.length > 0) { %>
+          <% comments.forEach(comment => { %>
+            <div class="comment-item">
+              <div class="comment-avatar"><%= comment.userName ? comment.userName[0].toUpperCase() : 'R' %></div>
+              <div class="comment-body">
+                <div style="font-weight:800"><%= comment.userName || 'Reader' %></div>
+                <div class="comment-meta"><%= new Date(comment.createdAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) %></div>
+                <div class="comment-text"><%= comment.body %></div>
+                <div class="comment-actions">
+                  <% if (currentUser) { %>
+                    <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/like">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <input type="hidden" name="comments" value="<%= commentSort %>">
+                      <button type="submit" class="comment-action-btn <%= comment.likedByMe ? 'is-liked' : '' %>">
+                        <%= comment.likedByMe ? 'Liked' : 'Like' %> (<%= comment.likeCount || 0 %>)
+                      </button>
+                    </form>
+                    <% if (comment.publicUserId === currentUser.id) { %>
+                      <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/delete" onsubmit="return confirm('Delete your comment?')">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button type="submit" class="comment-delete-btn">Delete</button>
+                      </form>
+                    <% } %>
+                  <% } else { %>
+                    <span class="comment-meta"><%= comment.likeCount || 0 %> <%= (comment.likeCount || 0) === 1 ? 'like' : 'likes' %></span>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p style="color:var(--muted);padding:18px 0">No comments yet. Be the first to start the discussion.</p>
+        <% } %>
+      </section>
 
       <!-- Tags -->
       <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">

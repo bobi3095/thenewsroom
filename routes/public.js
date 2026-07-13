@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { cacheMiddleware, KEYS } = require('../middleware/cache');
+const { cacheMiddleware, clearArticleCache, KEYS } = require('../middleware/cache');
 const { sanitizeArticleHtml } = require('../middleware/sanitize');
 const { csrfProtection } = require('../middleware/security');
 const { requirePublicUser } = require('../middleware/publicAuth');
@@ -155,9 +155,13 @@ router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug
   try {
     const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
     if (!article) return res.status(404).render('404', { categories: ALL_CATEGORIES, navCategories: NAV_CATEGORIES, moreCategories: MORE_CATEGORIES, page: '404' });
+    const commentSort = ['top', 'newest', 'oldest'].includes(req.query.comments) ? req.query.comments : 'top';
     article.content = sanitizeArticleHtml(article.content);
     article.authorFollowerCount = await db.getAuthorFollowerCount(article.authorId);
     article.isFollowingAuthor = req.publicUser ? await db.isFollowingAuthor(req.publicUser.id, article.authorId) : false;
+    article.likeSummary = await db.getArticleLikeSummary(article.id, req.publicUser?.id || null);
+    article.commentSummary = await db.getArticleCommentSummary(article.id);
+    const comments = await db.getArticleComments(article.id, commentSort, req.publicUser?.id || null);
     // Get related from all categories this article belongs to
     const articleCats = Array.isArray(article.categories) && article.categories.length > 0
       ? article.categories : [article.category];
@@ -167,13 +171,68 @@ router.get('/article/:slug', cacheMiddleware(req => KEYS.article(req.params.slug
         a.category === cat || (Array.isArray(a.categories) && a.categories.includes(cat))
       )).slice(0, 3);
     res.render('article', {
-      article, related,
+      article, related, comments, commentSort,
       categories: ALL_CATEGORIES,
       navCategories: NAV_CATEGORIES,
       moreCategories: MORE_CATEGORIES,
       page: 'article'
     });
   } catch(e) { console.error(e); res.status(500).send('Server error'); }
+});
+
+router.post('/article/:slug/like', requirePublicUser, csrfProtection, async (req, res) => {
+  try {
+    const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
+    if (article) {
+      await db.toggleArticleLike(article.id, req.publicUser.id);
+      clearArticleCache(article.slug);
+    }
+    res.redirect('/article/' + req.params.slug + '#discussion');
+  } catch(e) {
+    console.error('Article like error:', e);
+    res.redirect('/article/' + req.params.slug);
+  }
+});
+
+router.post('/article/:slug/comments', requirePublicUser, csrfProtection, async (req, res) => {
+  try {
+    const article = await db.getArticle({ slug: req.params.slug, status: 'published' });
+    if (!article) return res.redirect('/');
+    const body = String(req.body.body || '').trim();
+    if (body.length >= 1 && body.length <= 1000) {
+      await db.createArticleComment(article.id, req.publicUser.id, body);
+      clearArticleCache(article.slug);
+    }
+    res.redirect('/article/' + article.slug + '?comments=newest#discussion');
+  } catch(e) {
+    console.error('Create comment error:', e);
+    res.redirect('/article/' + req.params.slug + '#discussion');
+  }
+});
+
+router.post('/article/:slug/comments/:commentId/delete', requirePublicUser, csrfProtection, async (req, res) => {
+  try {
+    const articleId = await db.deleteOwnArticleComment(req.params.commentId, req.publicUser.id);
+    const article = articleId ? await db.getArticle({ id: articleId }) : await db.getArticle({ slug: req.params.slug });
+    if (article) clearArticleCache(article.slug);
+    res.redirect('/article/' + req.params.slug + '#discussion');
+  } catch(e) {
+    console.error('Delete comment error:', e);
+    res.redirect('/article/' + req.params.slug + '#discussion');
+  }
+});
+
+router.post('/article/:slug/comments/:commentId/like', requirePublicUser, csrfProtection, async (req, res) => {
+  try {
+    const articleId = await db.toggleArticleCommentLike(req.params.commentId, req.publicUser.id);
+    const article = articleId ? await db.getArticle({ id: articleId }) : await db.getArticle({ slug: req.params.slug });
+    if (article) clearArticleCache(article.slug);
+    const sort = ['top', 'newest', 'oldest'].includes(req.body.comments) ? req.body.comments : 'top';
+    res.redirect('/article/' + req.params.slug + '?comments=' + sort + '#discussion');
+  } catch(e) {
+    console.error('Comment like error:', e);
+    res.redirect('/article/' + req.params.slug + '#discussion');
+  }
 });
 
 // Search

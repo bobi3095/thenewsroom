@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comments - The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: 'comments', categories, user }) %>
+
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title">Comments</div>
+      <div class="topbar-actions">
+        <span style="font-size:0.78rem;color:var(--muted)"><%= comments.length %> visible comments</span>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="admin-card-title">Comment Moderation</div>
+        </div>
+
+        <% if (comments.length > 0) { %>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Comment</th>
+              <th>Reader</th>
+              <th>Article</th>
+              <th>Likes</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% comments.forEach(comment => { %>
+            <tr>
+              <td style="max-width:420px">
+                <div style="font-size:0.86rem;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere"><%= comment.body %></div>
+              </td>
+              <td>
+                <div class="article-title-cell">
+                  <%= comment.userName || 'Reader' %>
+                  <small><%= comment.userEmail || '' %></small>
+                </div>
+              </td>
+              <td>
+                <% if (comment.articleSlug) { %>
+                  <a href="/article/<%= comment.articleSlug %>#discussion" target="_blank" style="color:var(--accent);font-weight:700">
+                    <%= comment.articleTitle || 'View article' %>
+                  </a>
+                <% } else { %>
+                  <%= comment.articleTitle || 'Article' %>
+                <% } %>
+              </td>
+              <td style="color:var(--muted)"><%= comment.likeCount || 0 %></td>
+              <td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">
+                <%= new Date(comment.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+              </td>
+              <td>
+                <form method="POST" action="/admin/comments/delete/<%= comment.id %>" onsubmit="return confirm('Delete this comment?')" style="display:inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } else { %>
+        <div style="padding:48px;text-align:center;color:var(--muted)">
+          <div style="font-size:2rem;margin-bottom:12px">#</div>
+          <p>No visible comments yet.</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

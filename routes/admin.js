@@ -266,6 +266,21 @@ router.post('/profile/update', authMiddleware, upload.single('avatar'), csrfProt
 });
 
 // ── CACHE MANAGEMENT ─────────────────────────────────────────────
+router.get('/comments', authMiddleware, adminOnly, async (req, res) => {
+  const comments = await db.getAllArticleComments();
+  res.render('admin/comments', {
+    user: req.user,
+    comments,
+    categories: db.categories
+  });
+});
+
+router.post('/comments/delete/:id', authMiddleware, adminOnly, csrfProtection, async (req, res) => {
+  await db.adminDeleteArticleComment(req.params.id);
+  clearCache();
+  res.redirect('/admin/comments');
+});
+
 router.post('/cache/clear', authMiddleware, adminOnly, csrfProtection, (req, res) => {
   clearCache();
   res.redirect('/admin');
