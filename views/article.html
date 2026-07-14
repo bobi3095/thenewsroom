@@ -5,7 +5,7 @@
   <meta name="msvalidate.01" content="B9D530FDBCBAEEA62AA94C9F63F8E39C">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
-  <title><%= article.title %> — The News Room</title>
+  <title><%= article.title %> - The News Room</title>
   <meta name="description" content="<%= article.excerpt ? article.excerpt.substring(0,160) : article.title %>">
   <meta property="og:type" content="article">
   <meta property="og:title" content="<%= article.title %>">
@@ -46,175 +46,117 @@
   </script>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    .article-shell { max-width: 1220px; margin: 0 auto; padding: 0 24px; }
+    .article-layout { display: grid; grid-template-columns: minmax(0, 780px) 330px; gap: 52px; align-items: start; }
+    .article-hero-card { border-bottom: 1px solid var(--border); margin-bottom: 26px; padding-bottom: 20px; }
+    .article-kicker-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .article-category-badge { margin: 0; }
+    .article-author-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 22px; }
+    .article-author-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .article-author-avatar, .journalist-card-avatar {
+      width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+      border: 2px solid var(--border); background: var(--ink); color: white;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--serif); font-size: 1.25rem; font-weight: 800;
+    }
+    .article-author-name { font-size: 0.92rem; font-weight: 900; color: var(--ink); }
+    .article-meta-line { color: var(--muted); font-size: 0.76rem; margin-top: 3px; line-height: 1.5; }
+    .follow-pill, .article-action-btn, .mobile-action-btn {
+      border: 1px solid var(--ink); background: var(--ink); color: white; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
+      text-decoration: none; white-space: nowrap;
+    }
+    .follow-pill { border-radius: 999px; padding: 10px 17px; }
+    .follow-pill.is-following, .article-action-btn.secondary, .mobile-action-btn.secondary {
+      background: white; color: var(--ink); border-color: var(--border);
+    }
+    .article-action-bar {
+      position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 13px 0; border-bottom: 1px solid var(--border); margin-bottom: 28px;
+    }
+    .article-action-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .article-action-btn { min-height: 38px; border-radius: 999px; padding: 9px 14px; }
+    .article-action-btn.is-liked { background: var(--accent); border-color: var(--accent); color: white; }
     .share-panel {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      left: 0;
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-top: 3px solid #c8102e;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      width: 270px;
-      z-index: 9999;
-      padding: 12px;
+      display: none; position: absolute; top: calc(100% + 8px); left: 0; background: white;
+      border: 1px solid var(--border); border-top: 3px solid var(--accent);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18); width: 270px; z-index: 9999; padding: 12px;
     }
     .share-panel.open { display: block; }
     .share-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #1a1a1a;
-      text-decoration: none;
-      background: #f5f4f0;
-      margin-bottom: 5px;
-      cursor: pointer;
-      border: none;
-      width: 100%;
-      text-align: left;
-      transition: all 0.15s;
+      display: flex; align-items: center; gap: 12px; padding: 10px 12px; font-size: 0.85rem;
+      font-weight: 700; color: var(--ink); text-decoration: none; background: #f5f4f0;
+      margin-bottom: 5px; cursor: pointer; border: none; width: 100%; text-align: left;
     }
-    .share-item:last-child { margin-bottom: 0; }
-    .share-item:hover { color: white; }
-    .share-item.whatsapp:hover { background: #25D366; }
-    .share-item.twitter:hover { background: #000; }
-    .share-item.telegram:hover { background: #0088cc; }
-    .share-item.instagram:hover { background: #E1306C; }
-    .share-item.copylink:hover { background: #1a1a1a; }
-    .discussion-panel {
-      margin-top: 34px;
-      padding-top: 26px;
-      border-top: 1px solid var(--border);
+    .share-item:hover { color: white; background: var(--ink); }
+    .article-cover { border-radius: 8px; border: 1px solid var(--border); }
+    .article-body { max-width: 720px; font-size: 1.08rem; }
+    .article-body p { font-size: 1.08rem; }
+    .article-body blockquote { border-left-width: 4px; padding: 18px 22px; background: #faf7f4; }
+    .journalist-card, .trust-card, .discussion-panel, .sidebar-card {
+      border: 1px solid var(--border); background: white; border-radius: 8px;
     }
-    .article-like-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 14px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin-top: 28px;
-    }
-    .article-like-btn,
-    .comment-action-btn,
-    .comment-delete-btn {
-      border: 1px solid var(--border);
-      background: white;
-      color: var(--ink);
-      cursor: pointer;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .article-like-btn {
-      border-radius: 999px;
-      padding: 10px 16px;
-    }
-    .article-like-btn.is-liked {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-    }
+    .journalist-card { margin-top: 34px; padding: 20px; }
+    .journalist-card-top { display: flex; gap: 14px; align-items: flex-start; }
+    .journalist-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .trust-card { margin-top: 18px; padding: 16px; color: var(--muted); font-size: 0.86rem; line-height: 1.6; }
+    .discussion-panel { margin-top: 34px; padding: 22px; }
     .comment-form textarea {
-      width: 100%;
-      min-height: 110px;
-      resize: vertical;
-      border: 1px solid var(--border);
-      padding: 13px;
-      font: inherit;
-      line-height: 1.5;
-      margin-top: 12px;
+      width: 100%; min-height: 110px; resize: vertical; border: 1px solid var(--border);
+      padding: 13px; font: inherit; line-height: 1.5; margin-top: 12px;
     }
     .comment-form button {
-      margin-top: 10px;
-      border: none;
-      background: var(--ink);
-      color: white;
-      padding: 11px 18px;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
+      margin-top: 10px; border: none; background: var(--ink); color: white; padding: 11px 18px;
+      font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
     }
-    .comment-filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 20px 0 12px;
-    }
+    .comment-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 12px; }
     .comment-filter {
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 8px 12px;
-      color: var(--muted);
-      font-size: 0.72rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
+      border: 1px solid var(--border); border-radius: 999px; padding: 8px 12px; color: var(--muted);
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
     }
-    .comment-filter.active {
-      background: var(--ink);
-      border-color: var(--ink);
-      color: white;
-    }
-    .comment-item {
-      display: flex;
-      gap: 12px;
-      padding: 18px 0;
-      border-bottom: 1px solid var(--border);
-    }
+    .comment-filter.active { background: var(--ink); border-color: var(--ink); color: white; }
+    .comment-item { display: flex; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--border); }
     .comment-avatar {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: #4f6fd8;
-      color: white;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-weight: 900;
+      width: 38px; height: 38px; border-radius: 50%; background: #4f6fd8; color: white;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;
     }
-    .comment-body {
-      flex: 1;
-      min-width: 0;
+    .comment-body { flex: 1; min-width: 0; }
+    .comment-meta { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+    .comment-text { margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; color: var(--ink); }
+    .comment-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .comment-action-btn, .comment-delete-btn {
+      border: 1px solid var(--border); background: white; color: var(--ink); cursor: pointer;
+      border-radius: 999px; padding: 7px 10px; font-size: 0.64rem; font-weight: 900;
+      letter-spacing: 0.08em; text-transform: uppercase;
     }
-    .comment-meta {
-      color: var(--muted);
-      font-size: 0.72rem;
-      margin-top: 2px;
+    .comment-action-btn.is-liked, .comment-delete-btn { border-color: var(--accent); color: var(--accent); }
+    .article-sidebar { position: sticky; top: 18px; }
+    .sidebar-card { padding: 18px; margin-bottom: 18px; }
+    .sidebar-related-card {
+      display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 13px 0;
+      border-bottom: 1px solid var(--border); color: var(--ink); text-decoration: none;
     }
-    .comment-text {
-      margin-top: 8px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      line-height: 1.55;
-      color: var(--ink);
+    .sidebar-related-card:last-child { border-bottom: none; padding-bottom: 0; }
+    .sidebar-related-card img, .sidebar-related-fallback {
+      width: 92px; height: 62px; border-radius: 6px; object-fit: cover; background: #ece7df;
     }
-    .comment-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .comment-action-btn,
-    .comment-delete-btn {
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-size: 0.64rem;
-    }
-    .comment-action-btn.is-liked {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .comment-delete-btn {
-      color: var(--accent);
+    .sidebar-related-title { font-family: var(--serif); font-weight: 800; line-height: 1.25; font-size: 0.94rem; }
+    .mobile-sticky-actions { display: none; }
+    @media (max-width: 900px) {
+      .article-shell { padding: 0 16px; }
+      .article-layout { display: block; }
+      .article-author-row, .article-action-bar { align-items: flex-start; flex-direction: column; }
+      .article-sidebar { position: static; margin-top: 28px; }
+      .article-body { max-width: 100%; font-size: 1rem; }
+      .article-body p { font-size: 1rem; }
+      .mobile-sticky-actions {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; display: grid;
+        grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px; background: rgba(255,255,255,0.96);
+        border-top: 1px solid var(--border); box-shadow: 0 -10px 28px rgba(0,0,0,0.12);
+      }
+      .mobile-action-btn { min-height: 42px; border-radius: 999px; padding: 8px 6px; font-size: 0.62rem; }
+      body { padding-bottom: 64px; }
     }
   </style>
 </head>
@@ -223,226 +165,277 @@
 <%- include('partials/header.html') %>
 
 <main class="article-page">
-  <div class="article-page-grid">
-    <article>
-      <header class="article-header">
-        <% const artCats = Array.isArray(article.categories) && article.categories.length > 0 ? article.categories : [article.category]; %>
-        <% artCats.forEach(cat => { %>
-        <span class="article-category-badge" style="margin-right:6px"><%= cat %></span>
-        <% }) %>
-        <h1 class="article-headline"><%= article.title %></h1>
-        <% if (article.excerpt) { %>
-          <p class="article-deck"><%= article.excerpt %></p>
-        <% } %>
-        <div class="article-byline">
-          <div style="display:flex;align-items:center;gap:14px;flex:1">
-            <% if (article.authorAvatar) { %>
-              <img src="<%= article.authorAvatar %>" alt="<%= article.author %>"
-                style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid var(--border)">
-            <% } else { %>
-              <div style="width:48px;height:48px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white;font-family:var(--serif);font-size:1.2rem;font-weight:700">
-                <%= article.author ? article.author[0].toUpperCase() : 'A' %>
-              </div>
-            <% } %>
-            <div>
-              <div class="byline-name" style="font-size:0.88rem">
-                By <a href="/journalist/<%= article.authorId %>" style="color:inherit;text-decoration:none"><%= article.author %></a>
-              </div>
-              <% if (article.authorBio) { %>
-                <div style="font-size:0.75rem;color:var(--muted);margin-top:2px"><%= article.authorBio %></div>
-              <% } %>
-              <div class="byline-date" style="margin-top:2px">
-                <%= new Date(article.createdAt).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}) %>
-                <% if (article.views > 0) { %> · <%= article.views %> views<% } %>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+  <% const artCats = Array.isArray(article.categories) && article.categories.length > 0 ? article.categories : [article.category]; %>
+  <% const plainArticleText = String(article.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); %>
+  <% const readMinutes = Math.max(1, Math.ceil((plainArticleText ? plainArticleText.split(' ').length : 200) / 220)); %>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;margin:-12px 0 28px;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-        <a href="/journalist/<%= article.authorId %>" style="color:var(--ink);font-size:0.86rem;font-weight:700">
-          <%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %> · View journalist profile
-        </a>
-        <% if (currentUser) { %>
-          <% if (article.isFollowingAuthor) { %>
-            <form method="POST" action="/journalist/<%= article.authorId %>/unfollow">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" style="border:1px solid var(--border);background:white;color:var(--ink);padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Following</button>
-            </form>
-          <% } else { %>
-            <form method="POST" action="/journalist/<%= article.authorId %>/follow">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" style="border:1px solid var(--ink);background:var(--ink);color:white;padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Follow</button>
-            </form>
+  <div class="article-shell">
+    <div class="article-layout">
+      <article>
+        <header class="article-hero-card">
+          <div class="article-kicker-row">
+            <% artCats.forEach(cat => { %>
+              <span class="article-category-badge"><%= cat %></span>
+            <% }) %>
+          </div>
+          <h1 class="article-headline"><%= article.title %></h1>
+          <% if (article.excerpt) { %>
+            <p class="article-deck"><%= article.excerpt %></p>
           <% } %>
-        <% } else { %>
-          <a href="/login" style="display:inline-flex;border:1px solid var(--ink);background:var(--ink);color:white;padding:9px 15px;border-radius:999px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Follow</a>
-        <% } %>
-      </div>
 
-      <% if (article.image) { %>
-      <div class="article-cover" style="height:<%= article.coverHeight || 460 %>px">
-        <img
-          src="<%= article.image %>"
-          alt="<%= article.title %>"
-          style="object-fit:<%= article.coverFit || 'cover' %>;object-position:<%= article.coverPosition || 'center center' %>"
-        >
-      </div>
-      <% } %>
-
-      <div class="article-body">
-        <%- article.content %>
-      </div>
-
-      <div class="article-like-row">
-        <div style="font-size:0.88rem;color:var(--muted)">
-          <strong style="color:var(--ink)"><%= article.likeSummary.count %></strong>
-          <%= article.likeSummary.count === 1 ? 'like' : 'likes' %>
-        </div>
-        <% if (currentUser) { %>
-          <form method="POST" action="/article/<%= article.slug %>/like">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit" class="article-like-btn <%= article.likeSummary.liked ? 'is-liked' : '' %>">
-              <%= article.likeSummary.liked ? 'Liked' : 'Like' %>
-            </button>
-          </form>
-        <% } else { %>
-          <a href="/login" class="article-like-btn" style="text-decoration:none">Login to Like</a>
-        <% } %>
-      </div>
-
-      <section id="discussion" class="discussion-panel">
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div>
-            <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:6px">Discussion</div>
-            <h2 style="font-family:var(--serif);font-size:1.55rem;margin:0">
-              <%= article.commentSummary.count %> <%= article.commentSummary.count === 1 ? 'Comment' : 'Comments' %>
-            </h2>
-          </div>
-        </div>
-
-        <% if (currentUser) { %>
-          <form method="POST" action="/article/<%= article.slug %>/comments" class="comment-form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <textarea name="body" maxlength="1000" required placeholder="Add a public comment..."></textarea>
-            <button type="submit">Post Comment</button>
-          </form>
-        <% } else { %>
-          <div style="margin-top:14px;padding:16px;border:1px solid var(--border);background:#fafafa">
-            <p style="margin:0 0 10px;color:var(--muted)">Login with Google to like and comment on this article.</p>
-            <a href="/login" style="display:inline-flex;background:var(--ink);color:white;padding:10px 16px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Comment</a>
-          </div>
-        <% } %>
-
-        <div class="comment-filters">
-          <a class="comment-filter <%= commentSort === 'top' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=top#discussion">Top Comments</a>
-          <a class="comment-filter <%= commentSort === 'newest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=newest#discussion">Newest First</a>
-          <a class="comment-filter <%= commentSort === 'oldest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=oldest#discussion">Oldest First</a>
-        </div>
-
-        <% if (comments && comments.length > 0) { %>
-          <% comments.forEach(comment => { %>
-            <div class="comment-item">
-              <div class="comment-avatar"><%= comment.userName ? comment.userName[0].toUpperCase() : 'R' %></div>
-              <div class="comment-body">
-                <div style="font-weight:800"><%= comment.userName || 'Reader' %></div>
-                <div class="comment-meta"><%= new Date(comment.createdAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) %></div>
-                <div class="comment-text"><%= comment.body %></div>
-                <div class="comment-actions">
-                  <% if (currentUser) { %>
-                    <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/like">
-                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <input type="hidden" name="comments" value="<%= commentSort %>">
-                      <button type="submit" class="comment-action-btn <%= comment.likedByMe ? 'is-liked' : '' %>">
-                        <%= comment.likedByMe ? 'Liked' : 'Like' %> (<%= comment.likeCount || 0 %>)
-                      </button>
-                    </form>
-                    <% if (comment.publicUserId === currentUser.id) { %>
-                      <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/delete" onsubmit="return confirm('Delete your comment?')">
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button type="submit" class="comment-delete-btn">Delete</button>
-                      </form>
-                    <% } %>
-                  <% } else { %>
-                    <span class="comment-meta"><%= comment.likeCount || 0 %> <%= (comment.likeCount || 0) === 1 ? 'like' : 'likes' %></span>
-                  <% } %>
+          <div class="article-author-row">
+            <div class="article-author-main">
+              <% if (article.authorAvatar) { %>
+                <img class="article-author-avatar" src="<%= article.authorAvatar %>" alt="<%= article.author %>">
+              <% } else { %>
+                <span class="article-author-avatar"><%= article.author ? article.author[0].toUpperCase() : 'A' %></span>
+              <% } %>
+              <div>
+                <div class="article-author-name">
+                  By <a href="/journalist/<%= article.authorId %>" style="color:inherit;text-decoration:none"><%= article.author %></a>
+                </div>
+                <% if (article.authorBio) { %>
+                  <div class="article-meta-line"><%= article.authorBio %></div>
+                <% } %>
+                <div class="article-meta-line">
+                  <%= new Date(article.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %>
+                  &middot; <%= readMinutes %> min read
+                  <% if (article.views > 0) { %> &middot; <%= article.views %> views<% } %>
                 </div>
               </div>
             </div>
-          <% }) %>
-        <% } else { %>
-          <p style="color:var(--muted);padding:18px 0">No comments yet. Be the first to start the discussion.</p>
-        <% } %>
-      </section>
 
-      <!-- Tags -->
-      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
-        <% artCats.forEach(cat => { %>
-        <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
-        <% }) %>
-        <span class="tag">The News Room</span>
-      </div>
+            <% if (currentUser) { %>
+              <% if (article.isFollowingAuthor) { %>
+                <form method="POST" action="/journalist/<%= article.authorId %>/unfollow">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="follow-pill is-following">Following</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/journalist/<%= article.authorId %>/follow">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="follow-pill">Follow</button>
+                </form>
+              <% } %>
+            <% } else { %>
+              <a href="/login" class="follow-pill">Login to Follow</a>
+            <% } %>
+          </div>
+        </header>
 
-      <!-- Share Button -->
-      <div style="margin-top:28px;position:relative;display:inline-block">
-        <button id="share-btn" style="display:inline-flex;align-items:center;gap:8px;background:#1a1a1a;color:white;border:none;padding:11px 22px;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Share Article
-        </button>
+        <div class="article-action-bar">
+          <div class="article-action-group">
+            <% if (currentUser) { %>
+              <form method="POST" action="/article/<%= article.slug %>/like">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="article-action-btn <%= article.likeSummary.liked ? 'is-liked' : '' %>">
+                  <%= article.likeSummary.liked ? 'Liked' : 'Like' %> <%= article.likeSummary.count %>
+                </button>
+              </form>
+            <% } else { %>
+              <a href="/login" class="article-action-btn secondary">Like <%= article.likeSummary.count %></a>
+            <% } %>
+            <a href="#discussion" class="article-action-btn secondary">Comments <%= article.commentSummary.count %></a>
+            <button id="share-btn" class="article-action-btn secondary" type="button">Share</button>
+          </div>
+          <a href="/journalist/<%= article.authorId %>" class="article-action-btn secondary">
+            <%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %>
+          </a>
 
-        <div id="share-panel" class="share-panel">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#888;margin-bottom:10px;padding:0 4px">Share this article</div>
-          <a id="wa-link" href="#" target="_blank" class="share-item whatsapp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            WhatsApp
-          </a>
-          <a id="tw-link" href="#" target="_blank" class="share-item twitter">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-            Twitter / X
-          </a>
-          <a id="tg-link" href="#" target="_blank" class="share-item telegram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-            Telegram
-          </a>
-          <a href="https://www.instagram.com/_thenewsroom/" target="_blank" class="share-item instagram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            Instagram (Follow Us)
-          </a>
-          <button id="copy-btn" class="share-item copylink">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            <span id="copy-text">Copy Link</span>
-          </button>
+          <div id="share-panel" class="share-panel">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#888;margin-bottom:10px;padding:0 4px">Share this article</div>
+            <a id="wa-link" href="#" target="_blank" class="share-item whatsapp">WhatsApp</a>
+            <a id="tw-link" href="#" target="_blank" class="share-item twitter">Twitter / X</a>
+            <a id="tg-link" href="#" target="_blank" class="share-item telegram">Telegram</a>
+            <a href="https://www.instagram.com/_thenewsroom/" target="_blank" class="share-item instagram">Instagram (Follow Us)</a>
+            <button id="copy-btn" class="share-item copylink" type="button"><span id="copy-text">Copy Link</span></button>
+          </div>
         </div>
-      </div>
 
-    </article>
+        <% if (article.image) { %>
+        <div class="article-cover" style="height:<%= article.coverHeight || 460 %>px">
+          <img src="<%= article.image %>" alt="<%= article.title %>" style="object-fit:<%= article.coverFit || 'cover' %>;object-position:<%= article.coverPosition || 'center center' %>">
+        </div>
+        <% } %>
 
-    <!-- Sidebar -->
-    <aside>
-      <% if (related.length > 0) { %>
-      <div class="sidebar-widget">
-        <div class="widget-title">Related Stories</div>
-        <% related.forEach(r => { %>
-        <a href="/article/<%= r.slug %>" style="display:block;padding:14px 0;border-bottom:1px solid var(--border)">
-          <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);margin-bottom:5px"><%= r.category %></div>
-          <div style="font-family:var(--serif);font-size:0.92rem;font-weight:600;line-height:1.3;color:var(--ink)" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'"><%= r.title %></div>
-          <div style="font-size:0.68rem;color:var(--muted);margin-top:5px"><%= new Date(r.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></div>
-        </a>
-        <% }) %>
-      </div>
-      <% } %>
-      <div class="sidebar-widget">
-        <div class="widget-title">About Us</div>
-        <p style="font-size:0.82rem;color:var(--muted);line-height:1.65">The News Room is dedicated to independent journalism — covering the stories that matter, without fear or favour.</p>
-      </div>
-      <div class="sidebar-widget">
-        <div class="widget-title">Browse</div>
-        <% categories.forEach(cat => { %>
-        <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
-        <% }) %>
-      </div>
-    </aside>
+        <div class="article-body">
+          <%- article.content %>
+        </div>
+
+        <section class="journalist-card">
+          <div class="journalist-card-top">
+            <% if (article.authorAvatar) { %>
+              <img class="journalist-card-avatar" src="<%= article.authorAvatar %>" alt="<%= article.author %>">
+            <% } else { %>
+              <span class="journalist-card-avatar"><%= article.author ? article.author[0].toUpperCase() : 'A' %></span>
+            <% } %>
+            <div>
+              <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:5px">Written by</div>
+              <h2 style="font-family:var(--serif);margin:0;font-size:1.45rem"><%= article.author %></h2>
+              <p style="color:var(--muted);line-height:1.6;margin:8px 0 0"><%= article.authorBio || 'Independent journalist at The News Room.' %></p>
+              <div class="article-meta-line"><%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %></div>
+            </div>
+          </div>
+          <div class="journalist-card-actions">
+            <a href="/journalist/<%= article.authorId %>" class="article-action-btn secondary">View Profile</a>
+            <% if (currentUser) { %>
+              <% if (article.isFollowingAuthor) { %>
+                <form method="POST" action="/journalist/<%= article.authorId %>/unfollow">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="article-action-btn secondary">Following</button>
+                </form>
+              <% } else { %>
+                <form method="POST" action="/journalist/<%= article.authorId %>/follow">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="article-action-btn">Follow</button>
+                </form>
+              <% } %>
+            <% } else { %>
+              <a href="/login" class="article-action-btn">Login to Follow</a>
+            <% } %>
+          </div>
+        </section>
+
+        <div class="trust-card">
+          Found an error or have documents related to this story? Contact the newsroom so we can review corrections and updates.
+        </div>
+
+        <section id="discussion" class="discussion-panel">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:6px">Discussion</div>
+              <h2 style="font-family:var(--serif);font-size:1.55rem;margin:0">
+                <%= article.commentSummary.count %> <%= article.commentSummary.count === 1 ? 'Comment' : 'Comments' %>
+              </h2>
+            </div>
+          </div>
+
+          <% if (currentUser) { %>
+            <form method="POST" action="/article/<%= article.slug %>/comments" class="comment-form">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <textarea name="body" maxlength="1000" required placeholder="Add a public comment..."></textarea>
+              <button type="submit">Post Comment</button>
+            </form>
+          <% } else { %>
+            <div style="margin-top:14px;padding:16px;border:1px solid var(--border);background:#fafafa">
+              <p style="margin:0 0 10px;color:var(--muted)">Login with Google to like and comment on this article.</p>
+              <a href="/login" style="display:inline-flex;background:var(--ink);color:white;padding:10px 16px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Comment</a>
+            </div>
+          <% } %>
+
+          <div class="comment-filters">
+            <a class="comment-filter <%= commentSort === 'top' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=top#discussion">Top Comments</a>
+            <a class="comment-filter <%= commentSort === 'newest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=newest#discussion">Newest First</a>
+            <a class="comment-filter <%= commentSort === 'oldest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=oldest#discussion">Oldest First</a>
+          </div>
+
+          <% if (comments && comments.length > 0) { %>
+            <% comments.forEach(comment => { %>
+              <div class="comment-item">
+                <div class="comment-avatar"><%= comment.userName ? comment.userName[0].toUpperCase() : 'R' %></div>
+                <div class="comment-body">
+                  <div style="font-weight:800"><%= comment.userName || 'Reader' %></div>
+                  <div class="comment-meta"><%= new Date(comment.createdAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) %></div>
+                  <div class="comment-text"><%= comment.body %></div>
+                  <div class="comment-actions">
+                    <% if (currentUser) { %>
+                      <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/like">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="comments" value="<%= commentSort %>">
+                        <button type="submit" class="comment-action-btn <%= comment.likedByMe ? 'is-liked' : '' %>">
+                          <%= comment.likedByMe ? 'Liked' : 'Like' %> (<%= comment.likeCount || 0 %>)
+                        </button>
+                      </form>
+                      <% if (comment.publicUserId === currentUser.id) { %>
+                        <form method="POST" action="/article/<%= article.slug %>/comments/<%= comment.id %>/delete" onsubmit="return confirm('Delete your comment?')">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <button type="submit" class="comment-delete-btn">Delete</button>
+                        </form>
+                      <% } %>
+                    <% } else { %>
+                      <span class="comment-meta"><%= comment.likeCount || 0 %> <%= (comment.likeCount || 0) === 1 ? 'like' : 'likes' %></span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <p style="color:var(--muted);padding:18px 0">No comments yet. Be the first to start the discussion.</p>
+          <% } %>
+        </section>
+
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--border)">
+          <% artCats.forEach(cat => { %>
+            <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
+          <% }) %>
+          <span class="tag">The News Room</span>
+        </div>
+      </article>
+
+      <aside class="article-sidebar">
+        <div class="sidebar-card">
+          <div class="widget-title">Journalist</div>
+          <div class="article-author-main">
+            <% if (article.authorAvatar) { %>
+              <img class="article-author-avatar" src="<%= article.authorAvatar %>" alt="<%= article.author %>">
+            <% } else { %>
+              <span class="article-author-avatar"><%= article.author ? article.author[0].toUpperCase() : 'A' %></span>
+            <% } %>
+            <div>
+              <div class="article-author-name"><%= article.author %></div>
+              <div class="article-meta-line"><%= article.authorFollowerCount || 0 %> followers</div>
+            </div>
+          </div>
+          <a href="/journalist/<%= article.authorId %>" class="article-action-btn secondary" style="margin-top:14px;width:100%">View Profile</a>
+        </div>
+
+        <% if (related.length > 0) { %>
+        <div class="sidebar-card">
+          <div class="widget-title">Related Stories</div>
+          <% related.forEach(r => { %>
+          <a href="/article/<%= r.slug %>" class="sidebar-related-card">
+            <% if (r.image) { %>
+              <img src="<%= r.image %>" alt="<%= r.title %>">
+            <% } else { %>
+              <span class="sidebar-related-fallback"></span>
+            <% } %>
+            <span>
+              <span style="display:block;font-size:0.62rem;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:5px"><%= r.category %></span>
+              <span class="sidebar-related-title"><%= r.title %></span>
+              <span style="display:block;font-size:0.68rem;color:var(--muted);margin-top:6px"><%= new Date(r.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></span>
+            </span>
+          </a>
+          <% }) %>
+        </div>
+        <% } %>
+
+        <div class="sidebar-card">
+          <div class="widget-title">About Us</div>
+          <p style="font-size:0.82rem;color:var(--muted);line-height:1.65;margin:0">The News Room is dedicated to independent journalism covering the stories that matter, without fear or favour.</p>
+        </div>
+
+        <div class="sidebar-card">
+          <div class="widget-title">Browse</div>
+          <% categories.forEach(cat => { %>
+            <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
+          <% }) %>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="mobile-sticky-actions">
+    <% if (currentUser) { %>
+      <form method="POST" action="/article/<%= article.slug %>/like" style="display:contents">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="mobile-action-btn <%= article.likeSummary.liked ? '' : 'secondary' %>">Like</button>
+      </form>
+    <% } else { %>
+      <a href="/login" class="mobile-action-btn secondary">Like</a>
+    <% } %>
+    <a href="#discussion" class="mobile-action-btn secondary">Comment</a>
+    <button type="button" class="mobile-action-btn secondary" onclick="document.getElementById('share-btn').click()">Share</button>
+    <a href="/journalist/<%= article.authorId %>" class="mobile-action-btn">Follow</a>
   </div>
 </main>
 
@@ -450,7 +443,6 @@
 
 <script src="/js/main.js"></script>
 <script>
-// ── SHARE PANEL ──────────────────────────────────────────────────
 const pageUrl = window.location.href;
 const pageTitle = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : document.title;
 const articleId = '<%= article.id %>';
@@ -463,7 +455,6 @@ function trackArticleMetric(type) {
 
 trackArticleMetric('view');
 
-// Set share links
 document.getElementById('wa-link').href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(pageTitle + ' ' + pageUrl);
 document.getElementById('tw-link').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(pageTitle) + '&url=' + encodeURIComponent(pageUrl) + '&via=TheNewsroom_tnr';
 document.getElementById('tg-link').href = 'https://t.me/share/url?url=' + encodeURIComponent(pageUrl) + '&text=' + encodeURIComponent(pageTitle);
@@ -474,27 +465,21 @@ document.getElementById('tg-link').href = 'https://t.me/share/url?url=' + encode
   });
 });
 
-// Toggle panel
 document.getElementById('share-btn').addEventListener('click', function(e) {
   e.stopPropagation();
-  const panel = document.getElementById('share-panel');
-  panel.classList.toggle('open');
+  document.getElementById('share-panel').classList.toggle('open');
 });
 
-// Close when clicking outside
 document.addEventListener('click', function(e) {
   const panel = document.getElementById('share-panel');
   const btn = document.getElementById('share-btn');
-  if (!panel.contains(e.target) && !btn.contains(e.target)) {
-    panel.classList.remove('open');
-  }
+  if (!panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('open');
 });
 
-// Copy link
 document.getElementById('copy-btn').addEventListener('click', function() {
   trackArticleMetric('share');
   navigator.clipboard.writeText(pageUrl).then(function() {
-    document.getElementById('copy-text').textContent = '✅ Copied!';
+    document.getElementById('copy-text').textContent = 'Copied!';
     setTimeout(function() {
       document.getElementById('copy-text').textContent = 'Copy Link';
     }, 2000);
@@ -505,7 +490,7 @@ document.getElementById('copy-btn').addEventListener('click', function() {
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    document.getElementById('copy-text').textContent = '✅ Copied!';
+    document.getElementById('copy-text').textContent = 'Copied!';
     setTimeout(function() {
       document.getElementById('copy-text').textContent = 'Copy Link';
     }, 2000);
