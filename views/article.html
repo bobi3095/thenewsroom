@@ -46,11 +46,37 @@
   </script>
   <link rel="stylesheet" href="/css/style.css">
   <style>
+    .article-page {
+      background: #fbfaf7;
+      padding-top: 48px;
+    }
     .article-shell { max-width: 1220px; margin: 0 auto; padding: 0 24px; }
-    .article-layout { display: grid; grid-template-columns: minmax(0, 780px) 330px; gap: 52px; align-items: start; }
-    .article-hero-card { border-bottom: 1px solid var(--border); margin-bottom: 26px; padding-bottom: 20px; }
+    .article-layout { display: grid; grid-template-columns: minmax(0, 780px) 330px; gap: 34px; align-items: start; }
+    .article-hero-card { margin-bottom: 16px; padding-bottom: 0; }
     .article-kicker-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-    .article-category-badge { margin: 0; }
+    .article-category-badge {
+      margin: 0;
+      background: #d83645;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-size: 0.67rem;
+      letter-spacing: 0.04em;
+    }
+    .article-headline {
+      font-size: clamp(2.35rem, 4.5vw, 4rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      margin-bottom: 14px;
+    }
+    .article-deck {
+      border-left: none;
+      padding-left: 0;
+      max-width: 760px;
+      color: #5f6368;
+      font-size: 1.12rem;
+      line-height: 1.55;
+      margin-bottom: 22px;
+    }
     .article-author-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 22px; }
     .article-author-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .article-author-avatar, .journalist-card-avatar {
@@ -61,25 +87,71 @@
     }
     .article-author-name { font-size: 0.92rem; font-weight: 900; color: var(--ink); }
     .article-meta-line { color: var(--muted); font-size: 0.76rem; margin-top: 3px; line-height: 1.5; }
+    .verified-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      margin-left: 6px;
+      border-radius: 50%;
+      background: #d1122f;
+      color: white;
+      font-size: 0.58rem;
+      vertical-align: middle;
+    }
     .follow-pill, .article-action-btn, .mobile-action-btn {
-      border: 1px solid var(--ink); background: var(--ink); color: white; cursor: pointer;
+      border: 1px solid #d1122f; background: #d1122f; color: white; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
       font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;
       text-decoration: none; white-space: nowrap;
     }
     .follow-pill { border-radius: 999px; padding: 10px 17px; }
     .follow-pill.is-following, .article-action-btn.secondary, .mobile-action-btn.secondary {
-      background: white; color: var(--ink); border-color: var(--border);
+      background: white; color: #111; border-color: #dedbd4;
     }
     .article-action-bar {
-      position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 13px 0; border-bottom: 1px solid var(--border); margin-bottom: 28px;
+      position: relative;
+      display: block;
+      padding: 0;
+      border: 1px solid #dedbd4;
+      background: white;
+      border-radius: 8px;
+      margin: 26px 0 24px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+      overflow: visible;
     }
-    .article-action-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-    .article-action-btn { min-height: 38px; border-radius: 999px; padding: 9px 14px; }
-    .article-action-btn.is-liked { background: var(--accent); border-color: var(--accent); color: white; }
+    .article-action-group { display: grid; grid-template-columns: repeat(4, 1fr); align-items: stretch; }
+    .article-action-group form { display: contents; }
+    .article-action-btn {
+      min-height: 56px;
+      border: none;
+      border-right: 1px solid #e5e2db;
+      border-radius: 0;
+      padding: 10px 14px;
+      background: white;
+      color: #111;
+      font-size: 0.78rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .article-action-btn:last-child { border-right: none; }
+    .article-action-btn.is-liked { background: white; color: #d1122f; }
+    .action-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 22px;
+      border-radius: 999px;
+      background: #f0eee9;
+      color: #666;
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 0 8px;
+    }
     .share-panel {
-      display: none; position: absolute; top: calc(100% + 8px); left: 0; background: white;
+      display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: white;
       border: 1px solid var(--border); border-top: 3px solid var(--accent);
       box-shadow: 0 8px 32px rgba(0,0,0,0.18); width: 270px; z-index: 9999; padding: 12px;
     }
@@ -90,35 +162,64 @@
       margin-bottom: 5px; cursor: pointer; border: none; width: 100%; text-align: left;
     }
     .share-item:hover { color: white; background: var(--ink); }
-    .article-cover { border-radius: 8px; border: 1px solid var(--border); }
-    .article-body { max-width: 720px; font-size: 1.08rem; }
-    .article-body p { font-size: 1.08rem; }
+    .article-cover {
+      border-radius: 8px;
+      border: 1px solid #dedbd4;
+      margin-bottom: 10px;
+      background: #e8e2d8;
+    }
+    .article-cover-caption {
+      color: #777;
+      font-size: 0.74rem;
+      line-height: 1.5;
+      margin: 0 0 24px 8px;
+    }
+    .article-body { max-width: 720px; font-size: 1.08rem; color: #111; }
+    .article-body p { font-size: 1.08rem; line-height: 1.78; }
+    .article-body h2 { font-size: 1.68rem; letter-spacing: -0.01em; }
     .article-body blockquote { border-left-width: 4px; padding: 18px 22px; background: #faf7f4; }
     .journalist-card, .trust-card, .discussion-panel, .sidebar-card {
-      border: 1px solid var(--border); background: white; border-radius: 8px;
+      border: 1px solid #dedbd4; background: white; border-radius: 8px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
     }
     .journalist-card { margin-top: 34px; padding: 20px; }
     .journalist-card-top { display: flex; gap: 14px; align-items: flex-start; }
     .journalist-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .trust-card { margin-top: 18px; padding: 16px; color: var(--muted); font-size: 0.86rem; line-height: 1.6; }
     .discussion-panel { margin-top: 34px; padding: 22px; }
+    .discussion-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
     .comment-form textarea {
-      width: 100%; min-height: 110px; resize: vertical; border: 1px solid var(--border);
-      padding: 13px; font: inherit; line-height: 1.5; margin-top: 12px;
+      width: 100%; min-height: 52px; resize: vertical; border: 1px solid #dedbd4;
+      border-radius: 6px; padding: 14px; font: inherit; line-height: 1.5; margin-top: 0;
+      background: #fff;
     }
     .comment-form button {
       margin-top: 10px; border: none; background: var(--ink); color: white; padding: 11px 18px;
       font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
     }
-    .comment-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 12px; }
+    .comment-filters { display: flex; flex-wrap: wrap; gap: 18px; margin: 0; }
     .comment-filter {
-      border: 1px solid var(--border); border-radius: 999px; padding: 8px 12px; color: var(--muted);
-      font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      padding: 8px 0;
+      color: #666;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: 0;
     }
-    .comment-filter.active { background: var(--ink); border-color: var(--ink); color: white; }
-    .comment-item { display: flex; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--border); }
+    .comment-filter.active { background: transparent; border-color: #d1122f; color: #111; }
+    .comment-item { display: flex; gap: 12px; padding: 18px 0; border-bottom: 1px solid #e5e2db; }
     .comment-avatar {
-      width: 38px; height: 38px; border-radius: 50%; background: #4f6fd8; color: white;
+      width: 38px; height: 38px; border-radius: 50%; background: #6a4aa0; color: white;
       display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;
     }
     .comment-body { flex: 1; min-width: 0; }
@@ -132,21 +233,73 @@
     }
     .comment-action-btn.is-liked, .comment-delete-btn { border-color: var(--accent); color: var(--accent); }
     .article-sidebar { position: sticky; top: 18px; }
-    .sidebar-card { padding: 18px; margin-bottom: 18px; }
+    .sidebar-card { padding: 18px; margin-bottom: 24px; }
+    .sidebar-card .widget-title {
+      position: relative;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      font-size: 1rem;
+      letter-spacing: 0;
+      text-transform: none;
+      color: #111;
+    }
+    .sidebar-card .widget-title::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -1px;
+      width: 64px;
+      height: 3px;
+      background: #d1122f;
+    }
     .sidebar-related-card {
-      display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 13px 0;
-      border-bottom: 1px solid var(--border); color: var(--ink); text-decoration: none;
+      display: grid; grid-template-columns: 104px 1fr; gap: 12px; padding: 14px 0;
+      border-bottom: 1px solid #e5e2db; color: var(--ink); text-decoration: none;
     }
     .sidebar-related-card:last-child { border-bottom: none; padding-bottom: 0; }
     .sidebar-related-card img, .sidebar-related-fallback {
-      width: 92px; height: 62px; border-radius: 6px; object-fit: cover; background: #ece7df;
+      width: 104px; height: 82px; border-radius: 6px; object-fit: cover; background: #ece7df;
     }
     .sidebar-related-title { font-family: var(--serif); font-weight: 800; line-height: 1.25; font-size: 0.94rem; }
+    .newsletter-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffe7eb;
+      color: #d1122f;
+      font-size: 1.55rem;
+      margin-bottom: 12px;
+    }
+    .newsletter-input {
+      width: 100%;
+      border: 1px solid #dedbd4;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 12px 0 10px;
+      font: inherit;
+      font-size: 0.82rem;
+    }
+    .newsletter-btn {
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+      background: #c90024;
+      color: white;
+      padding: 12px;
+      font-size: 0.82rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
     .mobile-sticky-actions { display: none; }
     @media (max-width: 900px) {
       .article-shell { padding: 0 16px; }
       .article-layout { display: block; }
       .article-author-row, .article-action-bar { align-items: flex-start; flex-direction: column; }
+      .article-action-group { grid-template-columns: repeat(2, 1fr); width: 100%; }
+      .article-action-btn { border-bottom: 1px solid #e5e2db; }
       .article-sidebar { position: static; margin-top: 28px; }
       .article-body { max-width: 100%; font-size: 1rem; }
       .article-body p { font-size: 1rem; }
@@ -192,7 +345,7 @@
               <% } %>
               <div>
                 <div class="article-author-name">
-                  By <a href="/journalist/<%= article.authorId %>" style="color:inherit;text-decoration:none"><%= article.author %></a>
+                  By <a href="/journalist/<%= article.authorId %>" style="color:inherit;text-decoration:none"><%= article.author %></a><span class="verified-mark">v</span>
                 </div>
                 <% if (article.authorBio) { %>
                   <div class="article-meta-line"><%= article.authorBio %></div>
@@ -229,18 +382,16 @@
               <form method="POST" action="/article/<%= article.slug %>/like">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="article-action-btn <%= article.likeSummary.liked ? 'is-liked' : '' %>">
-                  <%= article.likeSummary.liked ? 'Liked' : 'Like' %> <%= article.likeSummary.count %>
+                  <%= article.likeSummary.liked ? 'Liked' : 'Like' %> <span class="action-count"><%= article.likeSummary.count %></span>
                 </button>
               </form>
             <% } else { %>
-              <a href="/login" class="article-action-btn secondary">Like <%= article.likeSummary.count %></a>
+              <a href="/login" class="article-action-btn secondary">Like <span class="action-count"><%= article.likeSummary.count %></span></a>
             <% } %>
-            <a href="#discussion" class="article-action-btn secondary">Comments <%= article.commentSummary.count %></a>
+            <a href="#discussion" class="article-action-btn secondary">Comments <span class="action-count"><%= article.commentSummary.count %></span></a>
             <button id="share-btn" class="article-action-btn secondary" type="button">Share</button>
+            <button class="article-action-btn secondary" type="button" onclick="document.getElementById('copy-btn').click()">Save</button>
           </div>
-          <a href="/journalist/<%= article.authorId %>" class="article-action-btn secondary">
-            <%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %>
-          </a>
 
           <div id="share-panel" class="share-panel">
             <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#888;margin-bottom:10px;padding:0 4px">Share this article</div>
@@ -256,6 +407,7 @@
         <div class="article-cover" style="height:<%= article.coverHeight || 460 %>px">
           <img src="<%= article.image %>" alt="<%= article.title %>" style="object-fit:<%= article.coverFit || 'cover' %>;object-position:<%= article.coverPosition || 'center center' %>">
         </div>
+        <p class="article-cover-caption">Illustration: The News Room</p>
         <% } %>
 
         <div class="article-body">
@@ -271,7 +423,7 @@
             <% } %>
             <div>
               <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:5px">Written by</div>
-              <h2 style="font-family:var(--serif);margin:0;font-size:1.45rem"><%= article.author %></h2>
+              <h2 style="font-family:var(--serif);margin:0;font-size:1.45rem"><%= article.author %><span class="verified-mark">v</span></h2>
               <p style="color:var(--muted);line-height:1.6;margin:8px 0 0"><%= article.authorBio || 'Independent journalist at The News Room.' %></p>
               <div class="article-meta-line"><%= article.authorFollowerCount || 0 %> <%= (article.authorFollowerCount || 0) === 1 ? 'follower' : 'followers' %></div>
             </div>
@@ -301,12 +453,16 @@
         </div>
 
         <section id="discussion" class="discussion-panel">
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div class="discussion-heading-row">
             <div>
-              <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;letter-spacing:0.14em;color:var(--accent);margin-bottom:6px">Discussion</div>
               <h2 style="font-family:var(--serif);font-size:1.55rem;margin:0">
-                <%= article.commentSummary.count %> <%= article.commentSummary.count === 1 ? 'Comment' : 'Comments' %>
+                Comments (<%= article.commentSummary.count %>)
               </h2>
+            </div>
+            <div class="comment-filters">
+              <a class="comment-filter <%= commentSort === 'top' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=top#discussion">Top Comments</a>
+              <a class="comment-filter <%= commentSort === 'newest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=newest#discussion">Newest</a>
+              <a class="comment-filter <%= commentSort === 'oldest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=oldest#discussion">Oldest</a>
             </div>
           </div>
 
@@ -322,12 +478,6 @@
               <a href="/login" style="display:inline-flex;background:var(--ink);color:white;padding:10px 16px;font-size:0.72rem;font-weight:900;text-transform:uppercase;letter-spacing:0.08em">Login to Comment</a>
             </div>
           <% } %>
-
-          <div class="comment-filters">
-            <a class="comment-filter <%= commentSort === 'top' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=top#discussion">Top Comments</a>
-            <a class="comment-filter <%= commentSort === 'newest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=newest#discussion">Newest First</a>
-            <a class="comment-filter <%= commentSort === 'oldest' ? 'active' : '' %>" href="/article/<%= article.slug %>?comments=oldest#discussion">Oldest First</a>
-          </div>
 
           <% if (comments && comments.length > 0) { %>
             <% comments.forEach(comment => { %>
@@ -373,22 +523,6 @@
       </article>
 
       <aside class="article-sidebar">
-        <div class="sidebar-card">
-          <div class="widget-title">Journalist</div>
-          <div class="article-author-main">
-            <% if (article.authorAvatar) { %>
-              <img class="article-author-avatar" src="<%= article.authorAvatar %>" alt="<%= article.author %>">
-            <% } else { %>
-              <span class="article-author-avatar"><%= article.author ? article.author[0].toUpperCase() : 'A' %></span>
-            <% } %>
-            <div>
-              <div class="article-author-name"><%= article.author %></div>
-              <div class="article-meta-line"><%= article.authorFollowerCount || 0 %> followers</div>
-            </div>
-          </div>
-          <a href="/journalist/<%= article.authorId %>" class="article-action-btn secondary" style="margin-top:14px;width:100%">View Profile</a>
-        </div>
-
         <% if (related.length > 0) { %>
         <div class="sidebar-card">
           <div class="widget-title">Related Stories</div>
@@ -410,15 +544,39 @@
         <% } %>
 
         <div class="sidebar-card">
-          <div class="widget-title">About Us</div>
-          <p style="font-size:0.82rem;color:var(--muted);line-height:1.65;margin:0">The News Room is dedicated to independent journalism covering the stories that matter, without fear or favour.</p>
+          <div class="widget-title">About the Journalist</div>
+          <div class="article-author-main" style="align-items:flex-start">
+            <% if (article.authorAvatar) { %>
+              <img class="article-author-avatar" src="<%= article.authorAvatar %>" alt="<%= article.author %>">
+            <% } else { %>
+              <span class="article-author-avatar"><%= article.author ? article.author[0].toUpperCase() : 'A' %></span>
+            <% } %>
+            <div>
+              <div class="article-author-name"><%= article.author %><span class="verified-mark">v</span></div>
+              <div class="article-meta-line">Independent Journalist</div>
+              <p style="font-size:0.82rem;color:#555;line-height:1.55;margin:10px 0 0"><%= article.authorBio || 'Independent journalist at The News Room, reporting stories that institutions ignore.' %></p>
+            </div>
+          </div>
+          <div style="display:flex;gap:28px;margin:18px 0">
+            <div>
+              <strong style="font-size:1.1rem;color:#111"><%= article.authorFollowerCount || 0 %></strong>
+              <div class="article-meta-line">Followers</div>
+            </div>
+            <div>
+              <strong style="font-size:1.1rem;color:#111">Stories</strong>
+              <div class="article-meta-line">Profile</div>
+            </div>
+          </div>
+          <a href="/journalist/<%= article.authorId %>" class="follow-pill is-following" style="border-radius:6px">View Profile</a>
         </div>
 
         <div class="sidebar-card">
-          <div class="widget-title">Browse</div>
-          <% categories.forEach(cat => { %>
-            <a href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>" class="tag"><%= cat %></a>
-          <% }) %>
+          <div class="newsletter-icon">@</div>
+          <h3 style="margin:0 0 4px;font-size:1.15rem;color:#111">Stay Informed</h3>
+          <p style="font-size:0.82rem;color:#555;line-height:1.55;margin:0">Get independent stories like this in your inbox.</p>
+          <input class="newsletter-input" type="email" placeholder="Enter your email">
+          <button class="newsletter-btn" type="button">Subscribe</button>
+          <p style="margin:10px 0 0;text-align:center;color:#888;font-size:0.68rem">No spam. Unsubscribe anytime.</p>
         </div>
       </aside>
     </div>
