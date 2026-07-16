@@ -85,7 +85,8 @@ router.get('/auth/google/callback', async (req, res) => {
     const user = await db.createOrUpdateGooglePublicUser({
       email: profile.email,
       name: profile.name,
-      googleId: profile.sub
+      googleId: profile.sub,
+      avatar: profile.picture
     });
     setPublicUserCookie(res, user);
     res.redirect('/account');

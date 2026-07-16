@@ -37,6 +37,7 @@ async function publicUserLocals(req, res, next) {
       email: user.email,
       username: user.username || '',
       name: user.name,
+      avatar: user.avatar || '',
       verified: !!user.verified,
       setupComplete: !!user.setupComplete
     };

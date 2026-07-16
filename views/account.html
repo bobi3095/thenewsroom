@@ -11,15 +11,22 @@
 <%- include('partials/header.html') %>
 
 <main class="account-page">
-  <section class="account-panel">
-    <div>
-      <div class="auth-kicker">Reader Account</div>
-      <h1><%= user.name %></h1>
-      <p><%= user.email %><% if (user.username) { %> · @<%= user.username %><% } %></p>
+  <section class="account-panel account-hero-panel">
+    <div class="account-identity">
+      <span class="account-large-avatar">
+        <% if (user.avatar) { %>
+          <img src="<%= user.avatar %>" alt="<%= user.name %>">
+        <% } else { %>
+          <%= user.name ? user.name[0].toUpperCase() : user.email[0].toUpperCase() %>
+        <% } %>
+      </span>
+      <div>
+        <div class="auth-kicker">Reader Account</div>
+        <h1><%= user.name %></h1>
+        <p><%= user.email %><% if (user.username) { %> &middot; @<%= user.username %><% } %></p>
+      </div>
     </div>
-    <span class="account-status is-verified">
-      Google verified
-    </span>
+    <span class="account-status is-verified">Google verified</span>
   </section>
 
   <% if (success) { %>
@@ -31,7 +38,7 @@
 
   <section class="account-card">
     <h2>Reader Profile</h2>
-    <p>This name is used for your reader account and follow features.</p>
+    <p>This name appears when you comment, like, and follow journalists.</p>
     <form method="POST" action="/account/profile" class="auth-form" style="margin-top:14px">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <label>
@@ -63,14 +70,20 @@
         <% }) %>
       </div>
     <% } else { %>
-      <p>You are not following any journalists yet. Open a journalist profile and tap Follow.</p>
+      <div class="account-empty-state">
+        <strong>No journalists followed yet</strong>
+        <p>Open an article or journalist profile and tap Follow to build your personal reading feed.</p>
+      </div>
     <% } %>
   </section>
 
   <section class="account-card">
     <h2>Account Security</h2>
-    <p>Your login is protected with an HTTP-only cookie. Sign out when using a shared device.</p>
-    <a href="/logout" class="account-link">Sign out</a>
+    <p>Your login is handled by Google and protected with a secure session cookie. Sign out when using a shared device.</p>
+    <div class="account-security-row">
+      <span>Provider: Google</span>
+      <a href="/logout" class="account-link">Sign out</a>
+    </div>
   </section>
 </main>
 

@@ -15,11 +15,15 @@
     <div class="header-date" id="header-date"></div>
     <div class="header-account">
       <% if (currentUser) { %>
-        <a href="/account" class="user-avatar-btn" title="<%= currentUser.name || currentUser.email %>">
-          <%= currentUser.name ? currentUser.name[0].toUpperCase() : currentUser.email[0].toUpperCase() %>
+        <a href="/account" class="user-avatar-btn" title="<%= currentUser.name || currentUser.email %>" aria-label="Open account">
+          <% if (currentUser.avatar) { %>
+            <img src="<%= currentUser.avatar %>" alt="">
+          <% } else { %>
+            <%= currentUser.name ? currentUser.name[0].toUpperCase() : currentUser.email[0].toUpperCase() %>
+          <% } %>
         </a>
       <% } else { %>
-        <a href="/login" class="login-signup-btn">Login/Sign up</a>
+        <a href="/login" class="login-signup-btn">Login / Sign up</a>
       <% } %>
     </div>
   </div>
@@ -133,37 +137,34 @@
   color: white;
 }
 .header-account .login-signup-btn {
-  border-color: rgba(200,16,46,0.55);
+  border-color: rgba(200,16,46,0.75);
   color: white;
-  border-radius: 10px;
-  background-color:rgb(0, 0, 0) ;
-  -webkit-animation: glow 1s ease-in-out infinite alternate;
-  -moz-animation: glow 1s ease-in-out infinite alternate;
-  animation: glow 1s ease-in-out infinite alternate;
-}
-@-webkit-keyframes login-signup-btn{
-  from {
-    text-shadow: 0 0 10px #fff, 0 0 20px #fff073;
-  }
-  to {
-    text-shadow: 0 0 20px #fff;
-  }
-
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c8102e, #7a1021);
+  box-shadow: 0 10px 22px rgba(200,16,46,0.22);
+  padding: 9px 14px;
 }
 .header-account .user-avatar-btn {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #4f6fd8;
-  border: none;
+  background: #c8102e;
+  border: 2px solid rgba(255,255,255,0.24);
   color: white;
   font-size: 0.9rem;
   font-weight: 800;
   letter-spacing: 0;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.28);
+}
+.header-account .user-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 @media (max-width: 640px) {
   .nav-dropdown {

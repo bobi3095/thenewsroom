@@ -11,10 +11,11 @@
 <%- include('partials/header.html') %>
 
 <main class="auth-page">
-  <section class="auth-panel">
+  <section class="auth-panel google-login-panel">
+    <div class="auth-brand-mark">TNR</div>
     <div class="auth-kicker">Reader Account</div>
-    <h1>Sign In</h1>
-    <p class="auth-copy">Continue with your Google account to follow journalists and manage your reader profile.</p>
+    <h1>Join The News Room</h1>
+    <p class="auth-copy">Sign in with Google to follow journalists, like stories, and join discussions with a verified reader profile.</p>
 
     <% if (typeof error !== 'undefined' && error) { %>
       <div class="auth-alert auth-alert-error"><%= error %></div>
@@ -24,10 +25,15 @@
     <% } %>
 
     <a class="google-auth-btn" href="/auth/google">
-      <span>G</span>
+      <span aria-hidden="true">G</span>
       Continue with Google
     </a>
-    <p class="auth-switch">No password needed. Google verifies your email during sign in.</p>
+    <div class="auth-benefit-grid">
+      <div><strong>No password</strong><span>Google verifies your email securely.</span></div>
+      <div><strong>Reader profile</strong><span>Your comments and follows stay with you.</span></div>
+      <div><strong>One account</strong><span>Works across mobile and laptop.</span></div>
+    </div>
+    <p class="auth-switch">By continuing, you agree to use a real Google account for community actions on The News Room.</p>
   </section>
 </main>
 

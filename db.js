@@ -72,6 +72,7 @@ async function initPostgres() {
       setup_complete BOOLEAN DEFAULT false,
       auth_provider TEXT DEFAULT 'email',
       google_id TEXT UNIQUE,
+      avatar TEXT DEFAULT '',
       verification_token TEXT,
       verification_expires TIMESTAMPTZ,
       otp_hash TEXT,
@@ -138,6 +139,7 @@ async function initPostgres() {
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS setup_complete BOOLEAN DEFAULT false;
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'email';
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS google_id TEXT;
+    ALTER TABLE public_users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_token TEXT;
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ;
     ALTER TABLE public_users ADD COLUMN IF NOT EXISTS otp_hash TEXT;
@@ -723,18 +725,20 @@ const db = {
     const email = normalizeEmail(profile.email);
     if (!email) return null;
     const name = String(profile.name || email.split('@')[0] || 'Reader').trim();
+    const avatar = String(profile.avatar || '').trim();
     if (isPostgres) {
       const { rows } = await pool.query(`
-        INSERT INTO public_users (email,password,name,verified,setup_complete,auth_provider,google_id)
-        VALUES ($1,'',$2,true,true,'google',$3)
+        INSERT INTO public_users (email,password,name,verified,setup_complete,auth_provider,google_id,avatar)
+        VALUES ($1,'',$2,true,true,'google',$3,$4)
         ON CONFLICT (email) DO UPDATE SET
           name=COALESCE(NULLIF(public_users.name,''), EXCLUDED.name),
           verified=true,
           setup_complete=true,
           auth_provider='google',
-          google_id=EXCLUDED.google_id
+          google_id=EXCLUDED.google_id,
+          avatar=COALESCE(NULLIF(EXCLUDED.avatar,''), public_users.avatar)
         RETURNING *
-      `, [email, name, profile.googleId || null]);
+      `, [email, name, profile.googleId || null, avatar]);
       return pgToPublicUser(rows[0]);
     }
     const lowdb = getLowdb();
@@ -750,6 +754,7 @@ const db = {
     user.setupComplete = true;
     user.authProvider = 'google';
     user.googleId = profile.googleId || user.googleId || '';
+    user.avatar = avatar || user.avatar || '';
     lowdb.write();
     return user;
   },
@@ -1141,6 +1146,7 @@ function pgToPublicUser(row) {
     setupComplete: row.setup_complete,
     authProvider: row.auth_provider || 'email',
     googleId: row.google_id || '',
+    avatar: row.avatar || '',
     verificationToken: row.verification_token,
     verificationExpires: row.verification_expires,
     otpHash: row.otp_hash,
@@ -1221,6 +1227,7 @@ function initLowdb() {
     user.username ||= '';
     user.setupComplete = user.setupComplete !== undefined ? user.setupComplete : !!user.password;
     user.authProvider ||= 'email';
+    user.avatar ||= '';
     user.otpAttempts ||= 0;
   });
   if (!_lowdb.data.users?.length) {

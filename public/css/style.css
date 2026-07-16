@@ -1051,9 +1051,9 @@ main { animation: fadeIn 0.3s ease; }
 /* ── PUBLIC AUTH ── */
 .auth-page,
 .account-page {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 56px 24px 24px;
+  padding: 64px 24px 34px;
 }
 
 .auth-panel,
@@ -1061,9 +1061,10 @@ main { animation: fadeIn 0.3s ease; }
 .account-card {
   background: var(--card-bg);
   border-top: 3px solid var(--accent);
-  box-shadow: var(--shadow-sm);
-  padding: 32px;
+  box-shadow: 0 22px 60px rgba(20,20,20,0.08);
+  padding: 34px;
   position: relative;
+  overflow: hidden;
 }
 
 .auth-panel::before,
@@ -1086,7 +1087,7 @@ main { animation: fadeIn 0.3s ease; }
 
 .auth-panel h1,
 .account-panel h1 {
-  font-size: 2.15rem;
+  font-size: clamp(2rem, 5vw, 3rem);
   margin-bottom: 10px;
   letter-spacing: 0;
 }
@@ -1109,8 +1110,31 @@ main { animation: fadeIn 0.3s ease; }
 .account-panel p,
 .account-card p {
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   line-height: 1.65;
+}
+
+.google-login-panel {
+  min-height: 460px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-brand-mark {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  background: #0a0a0a;
+  color: white;
+  font-family: var(--serif);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.18);
 }
 
 .auth-form {
@@ -1209,18 +1233,26 @@ main { animation: fadeIn 0.3s ease; }
   align-items: center;
   justify-content: center;
   gap: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid #dedbd4;
+  border-radius: 999px;
   background: #fff;
   color: var(--ink);
-  padding: 12px 14px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  margin: 18px 0;
+  padding: 15px 18px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  margin: 24px 0 18px;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.google-auth-btn:hover {
+  border-color: #c8102e;
+  box-shadow: 0 14px 32px rgba(200,16,46,0.14);
+  transform: translateY(-1px);
 }
 
 .google-auth-btn span {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -1229,6 +1261,37 @@ main { animation: fadeIn 0.3s ease; }
   border: 1px solid var(--border);
   color: #4285f4;
   font-weight: 900;
+}
+
+.auth-benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.auth-benefit-grid div {
+  background: #fbfaf7;
+  border: 1px solid #ebe7df;
+  border-radius: 10px;
+  padding: 13px;
+}
+
+.auth-benefit-grid strong,
+.auth-benefit-grid span {
+  display: block;
+}
+
+.auth-benefit-grid strong {
+  color: var(--ink);
+  font-size: 0.78rem;
+  margin-bottom: 4px;
+}
+
+.auth-benefit-grid span {
+  color: var(--muted);
+  font-size: 0.73rem;
+  line-height: 1.45;
 }
 
 .auth-divider {
@@ -1275,7 +1338,7 @@ main { animation: fadeIn 0.3s ease; }
 }
 
 .account-page {
-  max-width: 860px;
+  max-width: 940px;
 }
 
 .account-panel {
@@ -1285,8 +1348,53 @@ main { animation: fadeIn 0.3s ease; }
   gap: 20px;
 }
 
+.account-hero-panel {
+  background:
+    linear-gradient(135deg, rgba(10,10,10,0.96), rgba(34,14,19,0.94)),
+    var(--ink);
+  color: white;
+}
+
+.account-hero-panel h1,
+.account-hero-panel p {
+  color: white;
+}
+
+.account-hero-panel p {
+  opacity: 0.72;
+}
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.account-large-avatar {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #c8102e;
+  color: white;
+  border: 3px solid rgba(255,255,255,0.22);
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.account-large-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .account-card {
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .account-card form {
@@ -1305,9 +1413,10 @@ main { animation: fadeIn 0.3s ease; }
 }
 
 .account-status.is-verified {
-  background: #ecfdf5;
-  border-color: #047857;
-  color: #047857;
+  background: rgba(236,253,245,0.12);
+  border-color: rgba(16,185,129,0.55);
+  color: #86efac;
+  border-radius: 999px;
 }
 
 .account-status.is-pending {
@@ -1323,22 +1432,26 @@ main { animation: fadeIn 0.3s ease; }
 
 .follow-row {
   display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 14px;
   align-items: center;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--border);
   color: var(--ink);
   background: white;
+  border-radius: 12px;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
 .follow-row:hover {
   border-color: var(--accent);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
 }
 
 .follow-avatar {
-  width: 42px;
-  height: 42px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--ink);
   color: white;
@@ -1366,6 +1479,38 @@ main { animation: fadeIn 0.3s ease; }
   margin-top: 2px;
 }
 
+.account-empty-state {
+  border: 1px dashed #d8d2c6;
+  border-radius: 12px;
+  background: #fbfaf7;
+  padding: 18px;
+}
+
+.account-empty-state strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.account-empty-state p {
+  margin: 0;
+}
+
+.account-security-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.account-security-row span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .auth-panel,
 .account-panel,
 .account-card,
@@ -1373,7 +1518,7 @@ main { animation: fadeIn 0.3s ease; }
 .auth-form button,
 .account-card button,
 .account-link {
-  border-radius: 0;
+  border-radius: 12px;
 }
 
 @media (max-width: 640px) {
@@ -1386,11 +1531,26 @@ main { animation: fadeIn 0.3s ease; }
   .account-card {
     padding: 22px;
   }
+  .auth-benefit-grid {
+    grid-template-columns: 1fr;
+  }
   .auth-panel h1,
   .account-panel h1 {
     font-size: 1.65rem;
   }
   .account-panel {
+    align-items: flex-start;
+    display: grid;
+  }
+  .account-identity {
+    align-items: flex-start;
+  }
+  .account-large-avatar {
+    width: 58px;
+    height: 58px;
+    font-size: 1.35rem;
+  }
+  .account-security-row {
     align-items: flex-start;
     display: grid;
   }
