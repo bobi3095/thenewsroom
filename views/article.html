@@ -63,18 +63,21 @@
       letter-spacing: 0.04em;
     }
     .article-headline {
-      font-size: clamp(2.35rem, 4.5vw, 4rem);
-      line-height: 1.05;
-      letter-spacing: -0.035em;
+      font-family: var(--body-serif);
+      font-size: clamp(1.9rem, 3.2vw, 3rem);
+      font-weight: 700;
+      line-height: 1.14;
+      letter-spacing: -0.01em;
       margin-bottom: 14px;
     }
     .article-deck {
       border-left: none;
       padding-left: 0;
-      max-width: 760px;
+      max-width: 720px;
       color: #5f6368;
-      font-size: 1.12rem;
-      line-height: 1.55;
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.6;
       margin-bottom: 22px;
     }
     .article-author-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 22px; }
@@ -174,9 +177,28 @@
       line-height: 1.5;
       margin: 0 0 24px 8px;
     }
-    .article-body { max-width: 720px; font-size: 1.08rem; color: #111; }
-    .article-body p { font-size: 1.08rem; line-height: 1.78; }
-    .article-body h2 { font-size: 1.68rem; letter-spacing: -0.01em; }
+    .article-body {
+      max-width: 700px;
+      color: #111;
+      font-family: var(--body-serif);
+      font-size: 1rem;
+      line-height: 1.78;
+    }
+    .article-body p { font-size: 1rem; line-height: 1.78; margin-bottom: 1.25em; }
+    .article-body h2 {
+      font-family: var(--body-serif);
+      font-size: 1.38rem;
+      line-height: 1.3;
+      letter-spacing: 0;
+      margin-top: 1.8em;
+    }
+    .article-body h3 {
+      font-family: var(--body-serif);
+      font-size: 1.18rem;
+      line-height: 1.35;
+      margin-top: 1.5em;
+    }
+    .article-body li { font-size: 1rem; line-height: 1.7; }
     .article-body blockquote { border-left-width: 4px; padding: 18px 22px; background: #faf7f4; }
     .journalist-card, .trust-card, .discussion-panel, .sidebar-card {
       border: 1px solid #dedbd4; background: white; border-radius: 8px;
@@ -301,8 +323,12 @@
       .article-action-group { grid-template-columns: repeat(2, 1fr); width: 100%; }
       .article-action-btn { border-bottom: 1px solid #e5e2db; }
       .article-sidebar { position: static; margin-top: 28px; }
-      .article-body { max-width: 100%; font-size: 1rem; }
-      .article-body p { font-size: 1rem; }
+      .article-headline { font-size: clamp(1.55rem, 8vw, 2.1rem); line-height: 1.18; }
+      .article-deck { font-size: 0.95rem; }
+      .article-body { max-width: 100%; font-size: 0.98rem; }
+      .article-body p { font-size: 0.98rem; line-height: 1.72; }
+      .article-body h2 { font-size: 1.24rem; }
+      .article-body h3 { font-size: 1.1rem; }
       .mobile-sticky-actions {
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; display: grid;
         grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px; background: rgba(255,255,255,0.96);
