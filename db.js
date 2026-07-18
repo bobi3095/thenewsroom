@@ -23,6 +23,13 @@ async function initPostgres() {
       role TEXT DEFAULT 'author',
       bio TEXT DEFAULT '',
       avatar TEXT DEFAULT '',
+      location TEXT DEFAULT '',
+      beat TEXT DEFAULT '',
+      website_url TEXT DEFAULT '',
+      twitter_url TEXT DEFAULT '',
+      instagram_url TEXT DEFAULT '',
+      youtube_url TEXT DEFAULT '',
+      is_verified BOOLEAN DEFAULT true,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
 
@@ -124,6 +131,13 @@ async function initPostgres() {
   await pool.query(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT '';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS beat TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS website_url TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS twitter_url TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS instagram_url TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS youtube_url TEXT DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT true;
   `).catch(() => {});
   await pool.query(`
     ALTER TABLE articles ADD COLUMN IF NOT EXISTS categories TEXT[] DEFAULT '{}';
@@ -162,8 +176,8 @@ async function initPostgres() {
     }
     const hash = process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123', 10);
     await pool.query(
-      'INSERT INTO users (username, password, name, role, bio, avatar) VALUES ($1,$2,$3,$4,$5,$6)',
-      ['admin', hash, 'Admin', 'admin', 'Site administrator', '']
+      'INSERT INTO users (username, password, name, role, bio, avatar, location, beat, is_verified) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+      ['admin', hash, 'Admin', 'admin', 'Site administrator', '', '', 'Newsroom', true]
     );
     console.log('✅ Admin user created in PostgreSQL');
   }
@@ -405,8 +419,25 @@ const db = {
   async createUser(data) {
     if (isPostgres) {
       const { rows } = await pool.query(
-        'INSERT INTO users (username,password,name,role,bio,avatar) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
-        [data.username, data.password, data.name, data.role||'author', data.bio||'', data.avatar||'']
+        `INSERT INTO users
+          (username,password,name,role,bio,avatar,location,beat,website_url,twitter_url,instagram_url,youtube_url,is_verified)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         RETURNING *`,
+        [
+          data.username,
+          data.password,
+          data.name,
+          data.role || 'author',
+          data.bio || '',
+          data.avatar || '',
+          data.location || '',
+          data.beat || '',
+          data.websiteUrl || '',
+          data.twitterUrl || '',
+          data.instagramUrl || '',
+          data.youtubeUrl || '',
+          data.isVerified !== undefined ? !!data.isVerified : true
+        ]
       );
       return pgToUser(rows[0]);
     } else {
@@ -425,6 +456,13 @@ const db = {
       if (data.name !== undefined) { fields.push(`name=$${vals.length+1}`); vals.push(data.name); }
       if (data.bio !== undefined) { fields.push(`bio=$${vals.length+1}`); vals.push(data.bio); }
       if (data.avatar !== undefined) { fields.push(`avatar=$${vals.length+1}`); vals.push(data.avatar); }
+      if (data.location !== undefined) { fields.push(`location=$${vals.length+1}`); vals.push(data.location); }
+      if (data.beat !== undefined) { fields.push(`beat=$${vals.length+1}`); vals.push(data.beat); }
+      if (data.websiteUrl !== undefined) { fields.push(`website_url=$${vals.length+1}`); vals.push(data.websiteUrl); }
+      if (data.twitterUrl !== undefined) { fields.push(`twitter_url=$${vals.length+1}`); vals.push(data.twitterUrl); }
+      if (data.instagramUrl !== undefined) { fields.push(`instagram_url=$${vals.length+1}`); vals.push(data.instagramUrl); }
+      if (data.youtubeUrl !== undefined) { fields.push(`youtube_url=$${vals.length+1}`); vals.push(data.youtubeUrl); }
+      if (data.isVerified !== undefined) { fields.push(`is_verified=$${vals.length+1}`); vals.push(!!data.isVerified); }
       if (data.password !== undefined) { fields.push(`password=$${vals.length+1}`); vals.push(data.password); }
       if (!fields.length) return;
       vals.push(id);
@@ -1131,7 +1169,15 @@ function pgToUser(row) {
   return {
     id: row.id, username: row.username, password: row.password,
     name: row.name, role: row.role, bio: row.bio || '',
-    avatar: row.avatar || '', createdAt: row.created_at
+    avatar: row.avatar || '',
+    location: row.location || '',
+    beat: row.beat || '',
+    websiteUrl: row.website_url || '',
+    twitterUrl: row.twitter_url || '',
+    instagramUrl: row.instagram_url || '',
+    youtubeUrl: row.youtube_url || '',
+    isVerified: row.is_verified !== false,
+    createdAt: row.created_at
   };
 }
 
@@ -1223,6 +1269,16 @@ function initLowdb() {
   _lowdb.data.articleLikes ||= [];
   _lowdb.data.articleComments ||= [];
   _lowdb.data.articleCommentLikes ||= [];
+  _lowdb.data.users ||= [];
+  _lowdb.data.users.forEach(user => {
+    user.location ||= '';
+    user.beat ||= '';
+    user.websiteUrl ||= '';
+    user.twitterUrl ||= '';
+    user.instagramUrl ||= '';
+    user.youtubeUrl ||= '';
+    user.isVerified = user.isVerified !== undefined ? !!user.isVerified : true;
+  });
   _lowdb.data.publicUsers.forEach(user => {
     user.username ||= '';
     user.setupComplete = user.setupComplete !== undefined ? user.setupComplete : !!user.password;
@@ -1234,7 +1290,7 @@ function initLowdb() {
     if (isProduction && !process.env.ADMIN_PASSWORD_HASH) {
       throw new Error('ADMIN_PASSWORD_HASH must be set before creating the first admin user in production');
     }
-    _lowdb.data.users = [{ id:1, username:'admin', password: process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123',10), name:'Admin', role:'admin', bio:'', avatar:'', createdAt:new Date().toISOString() }];
+    _lowdb.data.users = [{ id:1, username:'admin', password: process.env.ADMIN_PASSWORD_HASH || bcrypt.hashSync('admin123',10), name:'Admin', role:'admin', bio:'', avatar:'', location:'', beat:'Newsroom', websiteUrl:'', twitterUrl:'', instagramUrl:'', youtubeUrl:'', isVerified:true, createdAt:new Date().toISOString() }];
     _lowdb.write();
   }
   if (!_lowdb.data.articles?.length) {

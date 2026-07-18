@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Authors — The News Room Admin</title>
+  <title>Authors - The News Room Admin</title>
   <link rel="stylesheet" href="/css/admin.css">
 </head>
 <body>
@@ -27,7 +27,8 @@
             <tr>
               <th>Author</th>
               <th>Username</th>
-              <th>Bio</th>
+              <th>Beat</th>
+              <th>Status</th>
               <th>Joined</th>
               <th>Actions</th>
             </tr>
@@ -48,8 +49,16 @@
                 </div>
               </td>
               <td style="color:var(--muted);font-size:0.8rem">@<%= a.username %></td>
-              <td style="color:var(--muted);font-size:0.8rem;max-width:200px">
-                <%= a.bio ? a.bio.substring(0,80) + (a.bio.length > 80 ? '...' : '') : '—' %>
+              <td style="color:var(--muted);font-size:0.8rem;max-width:220px">
+                <%= a.beat || 'Independent reporting' %>
+                <% if (a.location) { %><br><span style="font-size:0.72rem"><%= a.location %></span><% } %>
+              </td>
+              <td style="font-size:0.75rem;white-space:nowrap">
+                <% if (a.isVerified) { %>
+                  <span style="color:#047857;font-weight:700">Verified</span>
+                <% } else { %>
+                  <span style="color:var(--muted);font-weight:700">Pending</span>
+                <% } %>
               </td>
               <td style="color:var(--muted);font-size:0.75rem;white-space:nowrap">
                 <%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
@@ -69,7 +78,7 @@
         </table>
         <% } else { %>
         <div style="padding:48px;text-align:center;color:var(--muted)">
-          <div style="font-size:2rem;margin-bottom:12px">👤</div>
+          <div style="font-size:2rem;margin-bottom:12px">+</div>
           <p>No authors yet. <a href="/admin/authors/new" style="color:var(--accent)">Add your first author</a></p>
         </div>
         <% } %>

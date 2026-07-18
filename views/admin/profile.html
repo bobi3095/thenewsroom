@@ -25,7 +25,7 @@
         <div class="alert alert-error"><%= error %></div>
       <% } %>
 
-      <div style="max-width:560px">
+      <div style="max-width:760px">
         <!-- Profile Preview Card -->
         <div class="admin-card" style="margin-bottom:20px">
           <div style="padding:24px;display:flex;align-items:center;gap:20px">
@@ -42,6 +42,10 @@
               <% if (profileUser.bio) { %>
                 <div style="font-size:0.82rem;color:var(--muted);margin-top:4px"><%= profileUser.bio %></div>
               <% } %>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:6px">
+                <%= profileUser.beat || 'Independent reporting' %>
+                <% if (profileUser.location) { %> &middot; <%= profileUser.location %><% } %>
+              </div>
             </div>
           </div>
         </div>
@@ -83,6 +87,39 @@
               <div class="form-group">
                 <label class="form-label">Bio</label>
                 <textarea name="bio" class="form-control" rows="3" placeholder="A short description shown on your articles"><%= profileUser.bio || '' %></textarea>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label class="form-label">Location</label>
+                  <input type="text" name="location" class="form-control" value="<%= profileUser.location || '' %>" placeholder="e.g. Bhopal, India">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Beat / Category</label>
+                  <input type="text" name="beat" class="form-control" value="<%= profileUser.beat || '' %>" placeholder="e.g. Education, Politics">
+                </div>
+              </div>
+
+              <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+              <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:14px">Social Links</div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label class="form-label">Website</label>
+                  <input type="text" name="websiteUrl" class="form-control" value="<%= profileUser.websiteUrl || '' %>" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Twitter / X</label>
+                  <input type="text" name="twitterUrl" class="form-control" value="<%= profileUser.twitterUrl || '' %>" placeholder="https://x.com/username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Instagram</label>
+                  <input type="text" name="instagramUrl" class="form-control" value="<%= profileUser.instagramUrl || '' %>" placeholder="https://instagram.com/username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">YouTube</label>
+                  <input type="text" name="youtubeUrl" class="form-control" value="<%= profileUser.youtubeUrl || '' %>" placeholder="https://youtube.com/@channel">
+                </div>
               </div>
 
               <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">

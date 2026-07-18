@@ -21,7 +21,7 @@
         <div class="alert alert-error"><%= error %></div>
       <% } %>
 
-      <div style="max-width:560px">
+      <div style="max-width:760px">
         <div class="admin-card">
           <div class="admin-card-header">
             <div class="admin-card-title"><%= author ? 'Edit Author Profile' : 'Author Details' %></div>
@@ -76,6 +76,53 @@
                 <textarea name="bio" class="form-control" rows="3"
                   placeholder="e.g. Senior correspondent covering South Asian politics"><%= author ? author.bio : '' %></textarea>
                 <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">Shown below the author's name on articles</p>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label class="form-label">Location</label>
+                  <input type="text" name="location" class="form-control"
+                    value="<%= author ? (author.location || '') : '' %>" placeholder="e.g. Bhopal, India">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Beat / Category</label>
+                  <input type="text" name="beat" class="form-control"
+                    value="<%= author ? (author.beat || '') : '' %>" placeholder="e.g. Education, Politics">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label style="display:flex;align-items:center;gap:10px;font-size:0.84rem;font-weight:700;color:var(--ink)">
+                  <input type="checkbox" name="isVerified" <%= !author || author.isVerified ? 'checked' : '' %>>
+                  Verified journalist
+                </label>
+                <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">Shown as the public verification status on the journalist profile.</p>
+              </div>
+
+              <hr style="border:none;border-top:1px solid var(--border);margin:22px 0">
+              <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:14px">Social Links</div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                <div class="form-group">
+                  <label class="form-label">Website</label>
+                  <input type="text" name="websiteUrl" class="form-control"
+                    value="<%= author ? (author.websiteUrl || '') : '' %>" placeholder="https://example.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Twitter / X</label>
+                  <input type="text" name="twitterUrl" class="form-control"
+                    value="<%= author ? (author.twitterUrl || '') : '' %>" placeholder="https://x.com/username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Instagram</label>
+                  <input type="text" name="instagramUrl" class="form-control"
+                    value="<%= author ? (author.instagramUrl || '') : '' %>" placeholder="https://instagram.com/username">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">YouTube</label>
+                  <input type="text" name="youtubeUrl" class="form-control"
+                    value="<%= author ? (author.youtubeUrl || '') : '' %>" placeholder="https://youtube.com/@channel">
+                </div>
               </div>
 
               <div style="display:flex;gap:10px;margin-top:8px">

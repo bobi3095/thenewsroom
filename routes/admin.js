@@ -13,6 +13,13 @@ const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^
 const loginRateLimiter = createLoginRateLimiter();
 const passwordIsStrong = password => typeof password === 'string' && password.length >= 10;
 const usernameIsValid = username => /^[a-zA-Z0-9_-]{3,32}$/.test(username || '');
+const cleanText = value => String(value || '').trim();
+const cleanProfileUrl = value => {
+  const url = cleanText(value);
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+  return url;
+};
 
 // ── AUTH ──────────────────────────────────────────────────────────
 router.get('/login', (req, res) => {
@@ -173,14 +180,28 @@ router.get('/authors/new', authMiddleware, adminOnly, (req, res) => {
 
 router.post('/authors/create', authMiddleware, adminOnly, upload.single('avatar'), csrfProtection, async (req, res) => {
   try {
-    const { username, name, password, bio } = req.body;
+    const { username, name, password, bio, location, beat, websiteUrl, twitterUrl, instagramUrl, youtubeUrl } = req.body;
     if (!usernameIsValid(username)) return res.render('admin/author-form', { author: null, user: req.user, categories: db.categories, error: 'Username must be 3-32 letters, numbers, underscores, or hyphens' });
     if (!passwordIsStrong(password)) return res.render('admin/author-form', { author: null, user: req.user, categories: db.categories, error: 'Password must be at least 10 characters' });
     const existing = await db.getUser(username);
     if (existing) return res.render('admin/author-form', { author: null, user: req.user, categories: db.categories, error: 'Username already taken' });
     const avatarUrl = await saveFile(req.file);
     const hash = bcrypt.hashSync(password, 10);
-    await db.createUser({ username, name, password: hash, role: 'author', bio: bio||'', avatar: avatarUrl||'' });
+    await db.createUser({
+      username,
+      name,
+      password: hash,
+      role: 'author',
+      bio: bio || '',
+      avatar: avatarUrl || '',
+      location: cleanText(location),
+      beat: cleanText(beat),
+      websiteUrl: cleanProfileUrl(websiteUrl),
+      twitterUrl: cleanProfileUrl(twitterUrl),
+      instagramUrl: cleanProfileUrl(instagramUrl),
+      youtubeUrl: cleanProfileUrl(youtubeUrl),
+      isVerified: req.body.isVerified === 'on'
+    });
     res.redirect('/admin/authors');
   } catch(err) {
     console.error('Create author error:', err);
@@ -196,9 +217,19 @@ router.get('/authors/edit/:id', authMiddleware, adminOnly, async (req, res) => {
 
 router.post('/authors/update/:id', authMiddleware, adminOnly, upload.single('avatar'), csrfProtection, async (req, res) => {
   try {
-    const { name, bio, password } = req.body;
+    const { name, bio, password, location, beat, websiteUrl, twitterUrl, instagramUrl, youtubeUrl } = req.body;
     const id = parseInt(req.params.id);
-    const updates = { name, bio: bio||'' };
+    const updates = {
+      name,
+      bio: bio || '',
+      location: cleanText(location),
+      beat: cleanText(beat),
+      websiteUrl: cleanProfileUrl(websiteUrl),
+      twitterUrl: cleanProfileUrl(twitterUrl),
+      instagramUrl: cleanProfileUrl(instagramUrl),
+      youtubeUrl: cleanProfileUrl(youtubeUrl),
+      isVerified: req.body.isVerified === 'on'
+    };
     const avatarUrl = await saveFile(req.file);
     if (avatarUrl) {
       // Delete old avatar from Cloudinary
@@ -234,8 +265,17 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
 router.post('/profile/update', authMiddleware, upload.single('avatar'), csrfProtection, async (req, res) => {
   try {
-    const { name, bio, password, confirmPassword } = req.body;
-    const updates = { name, bio: bio||'' };
+    const { name, bio, password, confirmPassword, location, beat, websiteUrl, twitterUrl, instagramUrl, youtubeUrl } = req.body;
+    const updates = {
+      name,
+      bio: bio || '',
+      location: cleanText(location),
+      beat: cleanText(beat),
+      websiteUrl: cleanProfileUrl(websiteUrl),
+      twitterUrl: cleanProfileUrl(twitterUrl),
+      instagramUrl: cleanProfileUrl(instagramUrl),
+      youtubeUrl: cleanProfileUrl(youtubeUrl)
+    };
     const avatarUrl = await saveFile(req.file);
     if (avatarUrl) {
       // Delete old avatar from Cloudinary
