@@ -604,7 +604,12 @@ const db = {
     const appId = parseInt(id, 10);
     if (!appId) return null;
     if (isPostgres) {
-      const { rows } = await pool.query('SELECT * FROM journalist_applications WHERE id=$1', [appId]);
+      const { rows } = await pool.query(`
+        SELECT ja.*, pu.avatar AS public_user_avatar
+        FROM journalist_applications ja
+        LEFT JOIN public_users pu ON pu.id = ja.public_user_id
+        WHERE ja.id=$1
+      `, [appId]);
       return rows[0] ? pgToJournalistApplication(rows[0]) : null;
     }
     const lowdb = getLowdb();

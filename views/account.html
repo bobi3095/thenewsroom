@@ -78,6 +78,20 @@
   </section>
 
   <section class="account-card">
+    <h2>Journalist Application</h2>
+    <% if (journalistApplication) { %>
+      <p>Your latest application status is <strong><%= journalistApplication.status %></strong>.</p>
+      <% if (journalistApplication.reviewNote) { %>
+        <p><%= journalistApplication.reviewNote %></p>
+      <% } %>
+      <a href="/apply-journalist" class="account-link">View Application</a>
+    <% } else { %>
+      <p>Want to publish independent stories on The News Room? Apply for journalist verification.</p>
+      <a href="/apply-journalist" class="account-link">Apply as Journalist</a>
+    <% } %>
+  </section>
+
+  <section class="account-card">
     <h2>Account Security</h2>
     <p>Your login is handled by Google and protected with a secure session cookie. Sign out when using a shared device.</p>
     <div class="account-security-row">
