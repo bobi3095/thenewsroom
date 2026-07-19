@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Apply as Journalist - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .apply-page { max-width: 980px; margin: 0 auto; padding: 54px 24px 70px; }
+    .apply-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 28px;
+      align-items: start;
+      margin-bottom: 26px;
+    }
+    .apply-panel, .apply-side-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--accent);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(10,10,10,0.07);
+      padding: 28px;
+    }
+    .apply-kicker {
+      color: var(--accent);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .apply-panel h1 {
+      font-family: var(--sans);
+      font-size: clamp(2rem, 5vw, 3.1rem);
+      line-height: 1.08;
+      margin-bottom: 12px;
+    }
+    .apply-copy { color: var(--muted); line-height: 1.65; max-width: 680px; }
+    .application-status {
+      margin-top: 18px;
+      border-radius: 12px;
+      padding: 16px;
+      background: #fbfaf7;
+      border: 1px solid #ebe7df;
+    }
+    .application-status strong { display:block; margin-bottom:4px; }
+    .application-status span { color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
+    .apply-form { display: grid; gap: 16px; margin-top: 24px; }
+    .apply-grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    .apply-form label { display:grid; gap:7px; }
+    .apply-form label span {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink);
+    }
+    .apply-form input, .apply-form textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 14px;
+      font: inherit;
+      outline: none;
+      background: white;
+    }
+    .apply-form input:focus, .apply-form textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200,16,46,0.08);
+    }
+    .apply-check {
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:var(--muted);
+      font-size:0.86rem;
+      line-height:1.5;
+    }
+    .apply-check input { width:auto; margin-top:4px; }
+    .apply-submit {
+      border: none;
+      border-radius: 999px;
+      background: var(--ink);
+      color: white;
+      padding: 14px 22px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      justify-self: start;
+    }
+    .apply-alert { margin-top:18px; padding:13px 14px; border-left:3px solid currentColor; font-size:0.86rem; }
+    .apply-alert.error { background:#fff1f2; color:#9f1239; }
+    .apply-alert.success { background:#ecfdf5; color:#047857; }
+    .apply-side-card h2 { font-family: var(--sans); font-size: 1rem; margin-bottom: 12px; }
+    .apply-side-card ul { padding-left: 18px; color: var(--muted); line-height: 1.65; font-size: 0.9rem; }
+    .apply-side-card li { margin-bottom: 8px; }
+    @media (max-width: 820px) {
+      .apply-page { padding: 32px 14px 54px; }
+      .apply-hero { grid-template-columns: 1fr; }
+      .apply-grid { grid-template-columns: 1fr; }
+      .apply-panel, .apply-side-card { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="apply-page">
+  <div class="apply-hero">
+    <section class="apply-panel">
+      <div class="apply-kicker">Verified Journalist Program</div>
+      <h1>Apply as Journalist</h1>
+      <p class="apply-copy">Tell us about your reporting work, beat, and story ideas. Approved journalists get a verified profile and can be prepared for publishing access on The News Room.</p>
+
+      <% if (error) { %><div class="apply-alert error"><%= error %></div><% } %>
+      <% if (success) { %><div class="apply-alert success"><%= success %></div><% } %>
+
+      <% if (application) { %>
+        <div class="application-status">
+          <strong>Latest application: <%= application.status %></strong>
+          <span>
+            Submitted on <%= new Date(application.createdAt).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) %>.
+            <% if (application.reviewNote) { %> Note: <%= application.reviewNote %><% } %>
+          </span>
+        </div>
+      <% } %>
+
+      <% if (!application || application.status !== 'pending') { %>
+      <form method="POST" action="/apply-journalist" class="apply-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="apply-grid">
+          <label>
+            <span>Full name *</span>
+            <input type="text" name="name" required maxlength="80" value="<%= user.name || '' %>">
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" value="<%= user.email %>" readonly>
+          </label>
+          <label>
+            <span>Location *</span>
+            <input type="text" name="location" required maxlength="120" placeholder="City, State/Country">
+          </label>
+          <label>
+            <span>Beat / Category *</span>
+            <input type="text" name="beat" required maxlength="120" placeholder="Education, politics, law, local reporting">
+          </label>
+        </div>
+        <label>
+          <span>Short bio *</span>
+          <textarea name="bio" required maxlength="600" rows="3" placeholder="A short public bio that can appear on your journalist profile."></textarea>
+        </label>
+        <label>
+          <span>Experience / past work *</span>
+          <textarea name="experience" required maxlength="1600" rows="5" placeholder="Tell us about your reporting experience, published work, local knowledge, or subject expertise."></textarea>
+        </label>
+        <div class="apply-grid">
+          <label>
+            <span>Portfolio link</span>
+            <input type="text" name="portfolioUrl" maxlength="300" placeholder="https://example.com">
+          </label>
+          <label>
+            <span>Social links</span>
+            <input type="text" name="socialLinks" maxlength="800" placeholder="X, Instagram, YouTube, LinkedIn links">
+          </label>
+        </div>
+        <label>
+          <span>Sample story pitch *</span>
+          <textarea name="samplePitch" required maxlength="1200" rows="4" placeholder="Share one story idea you would report first, and why it matters."></textarea>
+        </label>
+        <label class="apply-check">
+          <input type="checkbox" name="agree" required>
+          <span>I confirm this application is truthful and I understand publishing access is available only after newsroom approval.</span>
+        </label>
+        <button class="apply-submit" type="submit">Submit Application</button>
+      </form>
+      <% } %>
+    </section>
+
+    <aside class="apply-side-card">
+      <h2>What we review</h2>
+      <ul>
+        <li>Your beat and reporting focus.</li>
+        <li>Past work, experience, or local expertise.</li>
+        <li>Whether your story pitch fits independent journalism.</li>
+        <li>Social/portfolio links that help verify identity.</li>
+      </ul>
+    </aside>
+  </div>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

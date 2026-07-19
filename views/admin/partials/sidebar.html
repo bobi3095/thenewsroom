@@ -17,6 +17,9 @@
     <a href="/admin/comments" class="<%= typeof activePage !== 'undefined' && activePage === 'comments' ? 'active' : '' %>">
       <span class="icon">#</span> <span>Comments</span>
     </a>
+    <a href="/admin/journalist-applications" class="<%= typeof activePage !== 'undefined' && activePage === 'journalist-applications' ? 'active' : '' %>">
+      <span class="icon">?</span> <span>Applications</span>
+    </a>
     <% } %>
 
     <% if (user.role === 'admin') { %>

@@ -24,6 +24,17 @@ function authViewData(extra = {}) {
   };
 }
 
+function cleanText(value, max = 2000) {
+  return String(value || '').trim().slice(0, max);
+}
+
+function cleanProfileUrl(value) {
+  const url = cleanText(value, 300);
+  if (!url) return '';
+  if (!/^https?:\/\//i.test(url)) return 'https://' + url;
+  return url;
+}
+
 router.get('/register', (req, res) => res.redirect('/login'));
 router.post('/register', (req, res) => res.status(410).redirect('/login'));
 router.post('/verify-otp', (req, res) => res.status(410).redirect('/login'));
@@ -105,9 +116,11 @@ router.get('/verify/:token', (req, res) => res.redirect('/login'));
 
 router.get('/account', requirePublicUser, async (req, res) => {
   const followedAuthors = await db.getFollowedAuthors(req.publicUser.id);
+  const journalistApplication = await db.getJournalistApplicationByPublicUser(req.publicUser.id);
   res.render('account', authViewData({
     user: req.publicUser,
     followedAuthors,
+    journalistApplication,
     success: req.query.profile === 'updated' ? 'Profile updated.' : null,
     warning: req.query.profile === 'invalid' ? 'Please enter a valid display name.' : null
   }));
@@ -120,6 +133,39 @@ router.post('/account/profile', requirePublicUser, csrfProtection, async (req, r
   if (!name || name.length < 2) return res.redirect('/account?profile=invalid');
   await db.updatePublicUserProfile(req.publicUser.id, { name });
   res.redirect('/account?profile=updated');
+});
+
+router.get('/apply-journalist', requirePublicUser, async (req, res) => {
+  const application = await db.getJournalistApplicationByPublicUser(req.publicUser.id);
+  res.render('apply-journalist', authViewData({
+    user: req.publicUser,
+    application,
+    error: req.query.error === 'invalid' ? 'Please fill all required fields before submitting.' : null,
+    success: req.query.submitted === '1' ? 'Application submitted. The newsroom will review it from the admin panel.' : null
+  }));
+});
+
+router.post('/apply-journalist', requirePublicUser, csrfProtection, async (req, res) => {
+  const existing = await db.getJournalistApplicationByPublicUser(req.publicUser.id);
+  if (existing?.status === 'pending') return res.redirect('/apply-journalist');
+
+  const payload = {
+    name: cleanText(req.body.name, 80),
+    location: cleanText(req.body.location, 120),
+    beat: cleanText(req.body.beat, 120),
+    bio: cleanText(req.body.bio, 600),
+    experience: cleanText(req.body.experience, 1600),
+    portfolioUrl: cleanProfileUrl(req.body.portfolioUrl),
+    socialLinks: cleanText(req.body.socialLinks, 800),
+    samplePitch: cleanText(req.body.samplePitch, 1200)
+  };
+
+  if (!payload.name || !payload.location || !payload.beat || !payload.bio || !payload.experience || !payload.samplePitch || req.body.agree !== 'on') {
+    return res.redirect('/apply-journalist?error=invalid');
+  }
+
+  await db.createJournalistApplication(req.publicUser, payload);
+  res.redirect('/apply-journalist?submitted=1');
 });
 
 module.exports = router;

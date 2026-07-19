@@ -321,6 +321,27 @@ router.post('/comments/delete/:id', authMiddleware, adminOnly, csrfProtection, a
   res.redirect('/admin/comments');
 });
 
+router.get('/journalist-applications', authMiddleware, adminOnly, async (req, res) => {
+  const applications = await db.getJournalistApplications();
+  res.render('admin/journalist-applications', {
+    user: req.user,
+    applications,
+    categories: db.categories,
+    success: req.query.reviewed === '1' ? 'Application review saved.' : null
+  });
+});
+
+router.post('/journalist-applications/:id/approve', authMiddleware, adminOnly, csrfProtection, async (req, res) => {
+  await db.reviewJournalistApplication(req.params.id, 'approved', req.user.id, req.body.reviewNote || '');
+  clearCache();
+  res.redirect('/admin/journalist-applications?reviewed=1');
+});
+
+router.post('/journalist-applications/:id/reject', authMiddleware, adminOnly, csrfProtection, async (req, res) => {
+  await db.reviewJournalistApplication(req.params.id, 'rejected', req.user.id, req.body.reviewNote || '');
+  res.redirect('/admin/journalist-applications?reviewed=1');
+});
+
 router.post('/cache/clear', authMiddleware, adminOnly, csrfProtection, (req, res) => {
   clearCache();
   res.redirect('/admin');

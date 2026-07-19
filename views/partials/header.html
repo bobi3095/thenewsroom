@@ -14,6 +14,7 @@
     </div>
     <div class="header-date" id="header-date"></div>
     <div class="header-account">
+      <a href="/apply-journalist" class="apply-journalist-btn">Apply as Journalist</a>
       <% if (currentUser) { %>
         <a href="/account" class="user-avatar-btn" title="<%= currentUser.name || currentUser.email %>" aria-label="Open account">
           <% if (currentUser.avatar) { %>
@@ -144,6 +145,18 @@
   box-shadow: 0 10px 22px rgba(200,16,46,0.22);
   padding: 9px 14px;
 }
+.header-account .apply-journalist-btn {
+  border-color: rgba(255,255,255,0.22);
+  color: white;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  padding: 9px 13px;
+}
+.header-account .apply-journalist-btn:hover {
+  background: white;
+  color: var(--ink);
+  border-color: white;
+}
 .header-account .user-avatar-btn {
   width: 38px;
   height: 38px;
@@ -196,6 +209,9 @@
     margin-left: auto;
     gap: 5px;
     max-width: calc(100vw - 190px);
+  }
+  .header-account .apply-journalist-btn {
+    max-width: 96px;
   }
   .header-account a {
     font-size: 0.58rem;

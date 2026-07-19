@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journalist Applications - The News Room Admin</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+<div class="admin-layout">
+  <%- include('partials/sidebar.html', { activePage: 'journalist-applications', categories, user }) %>
+  <div class="admin-main">
+    <div class="admin-topbar">
+      <div class="topbar-title">Journalist Applications</div>
+      <div class="topbar-actions">
+        <span style="font-size:0.78rem;color:var(--muted)"><%= applications.length %> total</span>
+      </div>
+    </div>
+    <div class="admin-content">
+      <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+      <% if (applications.length > 0) { %>
+        <div style="display:grid;gap:18px">
+          <% applications.forEach(app => { %>
+            <div class="admin-card">
+              <div style="padding:22px">
+                <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap">
+                  <div>
+                    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent);font-weight:700;margin-bottom:6px">
+                      <%= app.status %>
+                    </div>
+                    <h2 style="font-family:var(--serif);font-size:1.35rem;margin:0;color:var(--ink)"><%= app.name %></h2>
+                    <div style="color:var(--muted);font-size:0.82rem;margin-top:4px"><%= app.email %></div>
+                  </div>
+                  <div style="color:var(--muted);font-size:0.75rem;white-space:nowrap">
+                    <%= new Date(app.createdAt).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) %>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0">
+                  <div style="background:#f8f7f3;border:1px solid var(--border);padding:12px;border-radius:8px">
+                    <strong style="display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Location</strong>
+                    <span><%= app.location || 'Not added' %></span>
+                  </div>
+                  <div style="background:#f8f7f3;border:1px solid var(--border);padding:12px;border-radius:8px">
+                    <strong style="display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Beat</strong>
+                    <span><%= app.beat || 'Not added' %></span>
+                  </div>
+                  <div style="background:#f8f7f3;border:1px solid var(--border);padding:12px;border-radius:8px">
+                    <strong style="display:block;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">Portfolio</strong>
+                    <% if (app.portfolioUrl) { %>
+                      <a href="<%= app.portfolioUrl %>" target="_blank" style="color:var(--accent)">Open link</a>
+                    <% } else { %>
+                      <span>Not added</span>
+                    <% } %>
+                  </div>
+                </div>
+
+                <div style="display:grid;gap:14px;color:var(--ink);font-size:0.9rem;line-height:1.6">
+                  <div><strong>Bio:</strong><br><%= app.bio || 'Not added' %></div>
+                  <div><strong>Experience:</strong><br><%= app.experience || 'Not added' %></div>
+                  <div><strong>Sample pitch:</strong><br><%= app.samplePitch || 'Not added' %></div>
+                  <% if (app.socialLinks) { %><div><strong>Social links:</strong><br><%= app.socialLinks %></div><% } %>
+                  <% if (app.reviewNote) { %><div><strong>Review note:</strong><br><%= app.reviewNote %></div><% } %>
+                </div>
+
+                <% if (app.status === 'pending') { %>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+                    <form method="POST" action="/admin/journalist-applications/<%= app.id %>/approve">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <textarea name="reviewNote" class="form-control" rows="2" placeholder="Optional approval note"></textarea>
+                      <button type="submit" class="btn btn-accent" style="margin-top:8px">Approve</button>
+                    </form>
+                    <form method="POST" action="/admin/journalist-applications/<%= app.id %>/reject">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <textarea name="reviewNote" class="form-control" rows="2" placeholder="Optional rejection reason"></textarea>
+                      <button type="submit" class="btn btn-danger" style="margin-top:8px">Reject</button>
+                    </form>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="admin-card">
+          <div style="padding:48px;text-align:center;color:var(--muted)">No journalist applications yet.</div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+</body>
+</html>
