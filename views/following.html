@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Following - The News Room</title>
+  <meta name="description" content="Stories from journalists you follow on The News Room.">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #fff; }
+    .following-page {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px 26px 64px;
+    }
+    .following-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #eee;
+    }
+    .following-kicker {
+      color: var(--accent);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .following-title {
+      font-family: var(--sans);
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      line-height: 1.08;
+      margin: 0;
+      color: #0f0f0f;
+    }
+    .following-subtitle {
+      color: #606060;
+      margin-top: 8px;
+      line-height: 1.55;
+    }
+    .following-author-strip {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      margin-bottom: 18px;
+      scrollbar-width: none;
+    }
+    .following-author-strip::-webkit-scrollbar { display: none; }
+    .following-author-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      border: 1px solid #e5e5e5;
+      border-radius: 999px;
+      padding: 7px 12px 7px 7px;
+      color: #0f0f0f;
+      background: #fff;
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+    .following-author-chip span {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #0f0f0f;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .following-author-chip img { width: 100%; height: 100%; object-fit: cover; }
+    .follow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 20px;
+      row-gap: 40px;
+    }
+    .follow-card {
+      display: block;
+      min-width: 0;
+      color: #0f0f0f;
+    }
+    .follow-thumb {
+      aspect-ratio: 16 / 9;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #111;
+      position: relative;
+    }
+    .follow-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s ease; }
+    .follow-card:hover .follow-thumb img { transform: scale(1.02); }
+    .follow-placeholder {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.72);
+      font-family: var(--serif);
+      font-size: 2.25rem;
+      font-weight: 900;
+    }
+    .follow-badge {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      background: rgba(0,0,0,0.82);
+      color: #fff;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .follow-info {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 10px;
+      padding-top: 12px;
+    }
+    .follow-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #0f0f0f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 900;
+      overflow: hidden;
+    }
+    .follow-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .follow-title {
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.35;
+      font-weight: 800;
+      color: #0f0f0f;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .follow-meta {
+      color: #606060;
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+    .following-empty {
+      max-width: 720px;
+      margin: 36px auto;
+      text-align: center;
+      border: 1px solid #eee;
+      border-radius: 16px;
+      padding: 42px 24px;
+      background: #fbfaf7;
+    }
+    .following-empty h2 {
+      font-family: var(--sans);
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+    .following-empty p {
+      color: #606060;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    .following-empty a {
+      display: inline-flex;
+      border-radius: 999px;
+      background: #0f0f0f;
+      color: #fff;
+      padding: 11px 18px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .suggested-heading {
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 36px 0 16px;
+    }
+    @media (min-width: 1500px) {
+      .follow-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 1100px) {
+      .follow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .following-page { padding: 16px 12px 44px; }
+      .following-header { align-items: flex-start; display: grid; }
+      .follow-grid { grid-template-columns: 1fr; row-gap: 28px; }
+    }
+  </style>
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="following-page">
+  <header class="following-header">
+    <div>
+      <div class="following-kicker">Personalized Feed</div>
+      <h1 class="following-title">Following</h1>
+      <p class="following-subtitle">Latest stories from journalists you follow.</p>
+    </div>
+    <a href="/" class="following-author-chip"><span>+</span> Discover more</a>
+  </header>
+
+  <% if (followedAuthors && followedAuthors.length > 0) { %>
+    <div class="following-author-strip">
+      <% followedAuthors.forEach(author => { %>
+        <a href="/journalist/<%= author.id %>" class="following-author-chip">
+          <span>
+            <% if (author.avatar) { %>
+              <img src="<%= author.avatar %>" alt="<%= author.name %>">
+            <% } else { %>
+              <%= author.name ? author.name[0].toUpperCase() : 'J' %>
+            <% } %>
+          </span>
+          <%= author.name %>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <% if (articles.length > 0) { %>
+    <div class="follow-grid">
+      <% articles.forEach(a => { %>
+        <a href="/article/<%= a.slug %>" class="follow-card" data-track-article="<%= a.id %>">
+          <div class="follow-thumb">
+            <% if (a.image) { %>
+              <img src="<%= a.image %>" alt="<%= a.title %>">
+            <% } else { %>
+              <div class="follow-placeholder">TNR</div>
+            <% } %>
+            <span class="follow-badge"><%= a.category %></span>
+          </div>
+          <div class="follow-info">
+            <div class="follow-avatar">
+              <% if (a.authorAvatar) { %>
+                <img src="<%= a.authorAvatar %>" alt="<%= a.author || 'Author' %>">
+              <% } else { %>
+                <%= a.author ? a.author[0].toUpperCase() : 'A' %>
+              <% } %>
+            </div>
+            <div>
+              <h2 class="follow-title"><%= a.title %></h2>
+              <div class="follow-meta"><%= a.author || 'Independent Journalist' %></div>
+              <div class="follow-meta"><%= a.views || 0 %> views &bull; <%= new Date(a.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric' }) %></div>
+            </div>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <section class="following-empty">
+      <h2>Your following feed is empty</h2>
+      <% if (followedAuthors.length > 0) { %>
+        <p>The journalists you follow have not published stories yet. Explore recent stories while you wait.</p>
+      <% } else { %>
+        <p>Follow journalists from article pages or journalist profiles to build your personal feed.</p>
+      <% } %>
+      <a href="/">Discover Journalists</a>
+    </section>
+    <% if (suggestedArticles && suggestedArticles.length > 0) { %>
+      <div class="suggested-heading">Suggested Stories</div>
+      <div class="follow-grid">
+        <% suggestedArticles.forEach(a => { %>
+          <a href="/article/<%= a.slug %>" class="follow-card">
+            <div class="follow-thumb">
+              <% if (a.image) { %><img src="<%= a.image %>" alt="<%= a.title %>"><% } else { %><div class="follow-placeholder">TNR</div><% } %>
+              <span class="follow-badge"><%= a.category %></span>
+            </div>
+            <div class="follow-info">
+              <div class="follow-avatar"><%= a.author ? a.author[0].toUpperCase() : 'A' %></div>
+              <div>
+                <h2 class="follow-title"><%= a.title %></h2>
+                <div class="follow-meta"><%= a.author || 'Independent Journalist' %></div>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    <% } %>
+  <% } %>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+<script>
+function trackArticleMetric(articleId, type) {
+  if (!articleId || !navigator.sendBeacon) return;
+  const body = new Blob([JSON.stringify({ type: type })], { type: 'application/json' });
+  navigator.sendBeacon('/track/article/' + articleId, body);
+}
+document.querySelectorAll('[data-track-article]').forEach(function(link) {
+  link.addEventListener('click', function() {
+    trackArticleMetric(this.dataset.trackArticle, 'click');
+  });
+});
+</script>
+</body>
+</html>

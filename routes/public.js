@@ -33,10 +33,57 @@ function getLatest6hrs(articles) {
   return articles.filter(a => new Date(a.createdAt) >= oneDayAgo);
 }
 
+function scoreArticleForDiscovery(article, followedAuthorIds = new Set()) {
+  const ageHours = Math.max(0.25, (Date.now() - new Date(article.createdAt).getTime()) / (60 * 60 * 1000));
+  const freshnessScore = Math.max(0, 120 - ageHours * 3);
+  const engagementScore = Math.log1p(article.views || 0) * 8;
+  const followingBoost = followedAuthorIds.has(Number(article.authorId)) ? 55 : 0;
+  const featuredBoost = article.featured ? 18 : 0;
+  return freshnessScore + engagementScore + followingBoost + featuredBoost;
+}
+
+function buildFairFeed(articles, followedAuthorIds = new Set()) {
+  const ranked = [...articles].sort((a, b) => {
+    const scoreDiff = scoreArticleForDiscovery(b, followedAuthorIds) - scoreArticleForDiscovery(a, followedAuthorIds);
+    if (scoreDiff !== 0) return scoreDiff;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  const feed = [];
+  const remaining = [...ranked];
+  const firstPageAuthorCount = new Map();
+  const recentWindow = 6;
+  const firstPageLimit = 24;
+
+  while (remaining.length) {
+    const recentAuthors = new Set(feed.slice(-recentWindow).map(a => Number(a.authorId)).filter(Boolean));
+    let pickIndex = remaining.findIndex(article => {
+      const authorId = Number(article.authorId);
+      const usedInFirstPage = firstPageAuthorCount.get(authorId) || 0;
+      if (feed.length < firstPageLimit && usedInFirstPage >= 2) return false;
+      return !recentAuthors.has(authorId);
+    });
+
+    if (pickIndex === -1) pickIndex = 0;
+    const [picked] = remaining.splice(pickIndex, 1);
+    feed.push(picked);
+
+    if (feed.length <= firstPageLimit) {
+      const authorId = Number(picked.authorId);
+      firstPageAuthorCount.set(authorId, (firstPageAuthorCount.get(authorId) || 0) + 1);
+    }
+  }
+
+  return feed;
+}
+
 // Homepage
 router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
   try {
     const articles = await db.getArticles({ status: 'published' });
+    const followedAuthors = req.publicUser ? await db.getFollowedAuthors(req.publicUser.id) : [];
+    const followedAuthorIds = new Set(followedAuthors.map(author => Number(author.id)));
+    const fairFeedArticles = buildFairFeed(articles, followedAuthorIds);
     const trendingArticles = await db.getTrendingArticles(articles, 24);
 
     // Hero: admin-marked featured articles only
@@ -65,13 +112,38 @@ router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
 
     res.render('home', {
       hero, heroSidebar, latestNews, todaysNews,
-      byCategory, bottomArticles, articles, trendingArticles,
+      byCategory, bottomArticles, articles: fairFeedArticles, trendingArticles,
+      followedAuthors,
       categories: ALL_CATEGORIES,
       navCategories: NAV_CATEGORIES,
       moreCategories: MORE_CATEGORIES,
       page: 'home'
     });
   } catch(e) { console.error(e); res.status(500).send('Server error: ' + e.message); }
+});
+
+router.get('/following', requirePublicUser, async (req, res) => {
+  try {
+    const followedAuthors = await db.getFollowedAuthors(req.publicUser.id);
+    const followedAuthorIds = new Set(followedAuthors.map(author => Number(author.id)));
+    const allArticles = await db.getArticles({ status: 'published' });
+    const articles = allArticles
+      .filter(article => followedAuthorIds.has(Number(article.authorId)))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const suggestedArticles = buildFairFeed(allArticles).slice(0, 12);
+    res.render('following', {
+      articles,
+      followedAuthors,
+      suggestedArticles,
+      categories: ALL_CATEGORIES,
+      navCategories: NAV_CATEGORIES,
+      moreCategories: MORE_CATEGORIES,
+      page: 'following'
+    });
+  } catch(e) {
+    console.error('Following feed error:', e);
+    res.status(500).send('Server error');
+  }
 });
 
 router.post('/track/article/:id', async (req, res) => {

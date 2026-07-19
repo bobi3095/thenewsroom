@@ -268,6 +268,9 @@
 <main class="youtube-home">
   <nav class="topic-strip" aria-label="Browse categories">
     <a class="topic-chip active" href="/">All</a>
+    <% if (currentUser) { %>
+      <a class="topic-chip" href="/following">Following</a>
+    <% } %>
     <a class="topic-chip" href="/latest">Latest</a>
     <% categories.forEach(cat => { %>
       <a class="topic-chip" href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>"><%= cat %></a>
