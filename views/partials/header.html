@@ -16,6 +16,12 @@
     <div class="header-account">
       <a href="/apply-journalist" class="apply-journalist-btn">Apply as Journalist</a>
       <% if (currentUser) { %>
+        <a href="/notifications" class="notification-bell-btn" title="Notifications" aria-label="Notifications">
+          <span>!</span>
+          <% if ((currentUser.unreadNotificationCount || 0) > 0) { %>
+            <b><%= currentUser.unreadNotificationCount > 9 ? '9+' : currentUser.unreadNotificationCount %></b>
+          <% } %>
+        </a>
         <a href="/account" class="user-avatar-btn" title="<%= currentUser.name || currentUser.email %>" aria-label="Open account">
           <% if (currentUser.avatar) { %>
             <img src="<%= currentUser.avatar %>" alt="">
@@ -159,6 +165,37 @@
   background: white;
   color: var(--ink);
   border-color: white;
+}
+.header-account .notification-bell-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.07);
+  color: white;
+  border-color: rgba(255,255,255,0.18);
+  font-size: 0.92rem;
+  letter-spacing: 0;
+}
+.header-account .notification-bell-btn b {
+  position: absolute;
+  top: -5px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: white;
+  border: 2px solid #050505;
+  font-size: 0.58rem;
+  line-height: 1;
 }
 .header-account .user-avatar-btn {
   width: 38px;

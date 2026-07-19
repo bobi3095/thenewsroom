@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/images/logo.jpg" type="image/jpeg">
+  <title>Notifications - The News Room</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .notifications-page {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 52px 24px 70px;
+    }
+    .notifications-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .notifications-kicker {
+      color: var(--accent);
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .notifications-title {
+      font-family: var(--sans);
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      line-height: 1.08;
+      margin: 0;
+    }
+    .notifications-list {
+      display: grid;
+      gap: 12px;
+    }
+    .notification-card {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr);
+      gap: 14px;
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: white;
+      padding: 18px;
+      box-shadow: 0 10px 28px rgba(10,10,10,0.04);
+    }
+    .notification-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #c9c4ba;
+      margin-top: 8px;
+    }
+    .notification-card.is-unread .notification-dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(200,16,46,0.1);
+    }
+    .notification-card h2 {
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+    .notification-card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0 0 8px;
+    }
+    .notification-time {
+      color: #888;
+      font-size: 0.76rem;
+    }
+    .notification-empty {
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: #fbfaf7;
+      padding: 44px 22px;
+      color: var(--muted);
+    }
+    .notification-empty h2 {
+      font-family: var(--sans);
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    @media (max-width: 640px) {
+      .notifications-page { padding: 32px 14px 54px; }
+      .notifications-header { align-items: flex-start; display: grid; }
+    }
+  </style>
+</head>
+<body>
+<%- include('partials/header.html') %>
+
+<main class="notifications-page">
+  <header class="notifications-header">
+    <div>
+      <div class="notifications-kicker">Reader Updates</div>
+      <h1 class="notifications-title">Notifications</h1>
+    </div>
+    <form method="POST" action="/notifications/read">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="account-link">Mark all as read</button>
+    </form>
+  </header>
+
+  <% if (notifications && notifications.length > 0) { %>
+    <div class="notifications-list">
+      <% notifications.forEach(notification => { %>
+        <a class="notification-card <%= notification.readAt ? '' : 'is-unread' %>" href="<%= notification.url || '/notifications' %>">
+          <span class="notification-dot"></span>
+          <span>
+            <h2><%= notification.title %></h2>
+            <% if (notification.body) { %><p><%= notification.body %></p><% } %>
+            <span class="notification-time">
+              <%= new Date(notification.createdAt).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) %>
+            </span>
+          </span>
+        </a>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <section class="notification-empty">
+      <h2>No notifications yet</h2>
+      <p>Follow journalists to receive updates when they publish new stories.</p>
+    </section>
+  <% } %>
+</main>
+
+<%- include('partials/footer.html') %>
+<script src="/js/main.js"></script>
+</body>
+</html>

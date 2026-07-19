@@ -123,7 +123,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
       if ((imageUrl || removeImage === '1') && existing?.image) {
         await deleteFile(existing.image);
       }
-      await db.updateArticle(parseInt(id), {
+      const updatedArticle = await db.updateArticle(parseInt(id), {
         title: title.trim(), content: cleanContent, excerpt,
         category: primaryCategory,
         categories: validCategories,
@@ -135,8 +135,11 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         coverFit,
         coverPosition
       });
+      if (existing?.status !== 'published' && updatedArticle?.status === 'published') {
+        await db.notifyFollowersOfArticle(updatedArticle);
+      }
     } else {
-      await db.createArticle({
+      const createdArticle = await db.createArticle({
         title: title.trim(), content: cleanContent, excerpt,
         category: primaryCategory,
         categories: validCategories,
@@ -150,6 +153,9 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         coverFit,
         coverPosition
       });
+      if (createdArticle?.status === 'published') {
+        await db.notifyFollowersOfArticle(createdArticle);
+      }
     }
     clearCache(); // Clear all cache so new article appears immediately
     res.redirect('/admin');

@@ -31,6 +31,12 @@ async function publicUserLocals(req, res, next) {
     if (payload.type !== 'public') throw new Error('Invalid user token type');
     const user = await db.getPublicUserById(payload.id);
     if (!user) throw new Error('User not found');
+    let unreadNotificationCount = 0;
+    try {
+      unreadNotificationCount = await db.getUnreadNotificationCount(user.id);
+    } catch (err) {
+      console.error('Unread notification count error:', err.message);
+    }
     req.publicUser = user;
     res.locals.currentUser = {
       id: user.id,
@@ -39,7 +45,8 @@ async function publicUserLocals(req, res, next) {
       name: user.name,
       avatar: user.avatar || '',
       verified: !!user.verified,
-      setupComplete: !!user.setupComplete
+      setupComplete: !!user.setupComplete,
+      unreadNotificationCount
     };
   } catch {
     res.clearCookie(USER_COOKIE, cookieOptions);

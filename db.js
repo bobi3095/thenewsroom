@@ -146,6 +146,18 @@ async function initPostgres() {
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      public_user_id INTEGER NOT NULL REFERENCES public_users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT DEFAULT '',
+      url TEXT DEFAULT '',
+      dedupe_key TEXT UNIQUE,
+      read_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
   `);
 
   // Add new columns if upgrading from old schema
@@ -190,6 +202,8 @@ async function initPostgres() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_article_comment_likes_comment_id ON article_comment_likes(comment_id)').catch(() => {});
   await pool.query('CREATE INDEX IF NOT EXISTS idx_journalist_applications_status_created ON journalist_applications(status, created_at DESC)').catch(() => {});
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS journalist_applications_one_pending_per_user ON journalist_applications(public_user_id) WHERE status='pending'").catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_public_user_created ON notifications(public_user_id, created_at DESC)').catch(() => {});
+  await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_public_user_unread ON notifications(public_user_id) WHERE read_at IS NULL').catch(() => {});
 
   // Seed admin
   const { rows } = await pool.query("SELECT id FROM users WHERE role='admin' LIMIT 1");
@@ -650,6 +664,7 @@ const db = {
       authorId = author?.id || null;
     }
 
+    let reviewed = null;
     if (isPostgres) {
       const { rows } = await pool.query(
         `UPDATE journalist_applications
@@ -658,19 +673,138 @@ const db = {
          RETURNING *`,
         [status, String(note || '').trim(), reviewerId || null, authorId, appId]
       );
-      return rows[0] ? pgToJournalistApplication(rows[0]) : null;
+      reviewed = rows[0] ? pgToJournalistApplication(rows[0]) : null;
+    } else {
+      const lowdb = getLowdb();
+      const app = (lowdb.data.journalistApplications || []).find(item => item.id === appId);
+      if (!app) return null;
+      app.status = status;
+      app.reviewNote = String(note || '').trim();
+      app.reviewedBy = reviewerId || null;
+      app.reviewedAt = new Date().toISOString();
+      app.updatedAt = new Date().toISOString();
+      app.authorId = authorId;
+      lowdb.write();
+      reviewed = app;
+    }
+
+    if (reviewed) {
+      await db.createNotification({
+        publicUserId: reviewed.publicUserId,
+        type: 'journalist_application_' + status,
+        title: status === 'approved' ? 'Your journalist application was approved' : 'Your journalist application was reviewed',
+        body: status === 'approved'
+          ? 'You have been approved as a verified journalist on The News Room.'
+          : (String(note || '').trim() || 'Your application was not approved at this time.'),
+        url: '/apply-journalist',
+        dedupeKey: `journalist-application:${reviewed.id}:${status}`
+      });
+    }
+
+    return reviewed;
+  },
+
+  async createNotification(data) {
+    const publicUserId = parseInt(data.publicUserId, 10);
+    if (!publicUserId || !data.title || !data.type) return null;
+    const payload = {
+      publicUserId,
+      type: String(data.type || '').trim(),
+      title: String(data.title || '').trim(),
+      body: String(data.body || '').trim(),
+      url: String(data.url || '').trim(),
+      dedupeKey: data.dedupeKey ? String(data.dedupeKey).trim() : null
+    };
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        `INSERT INTO notifications (public_user_id,type,title,body,url,dedupe_key)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (dedupe_key) DO NOTHING
+         RETURNING *`,
+        [payload.publicUserId, payload.type, payload.title, payload.body, payload.url, payload.dedupeKey]
+      );
+      return rows[0] ? pgToNotification(rows[0]) : null;
     }
     const lowdb = getLowdb();
-    const app = (lowdb.data.journalistApplications || []).find(item => item.id === appId);
-    if (!app) return null;
-    app.status = status;
-    app.reviewNote = String(note || '').trim();
-    app.reviewedBy = reviewerId || null;
-    app.reviewedAt = new Date().toISOString();
-    app.updatedAt = new Date().toISOString();
-    app.authorId = authorId;
+    lowdb.data.notifications ||= [];
+    if (payload.dedupeKey && lowdb.data.notifications.some(n => n.dedupeKey === payload.dedupeKey)) return null;
+    const id = Math.max(0, ...lowdb.data.notifications.map(n => n.id)) + 1;
+    const notification = { id, ...payload, readAt: null, createdAt: new Date().toISOString() };
+    lowdb.data.notifications.push(notification);
     lowdb.write();
-    return app;
+    return notification;
+  },
+
+  async notifyFollowersOfArticle(article) {
+    if (!article?.id || !article.authorId || article.status !== 'published') return 0;
+    if (isPostgres) {
+      const { rows } = await pool.query('SELECT public_user_id FROM public_user_follows WHERE author_id=$1', [article.authorId]);
+      await Promise.all(rows.map(row => db.createNotification({
+        publicUserId: row.public_user_id,
+        type: 'new_article',
+        title: `${article.author || 'A journalist'} published a new story`,
+        body: article.title,
+        url: `/article/${article.slug}`,
+        dedupeKey: `new-article:${article.id}:${row.public_user_id}`
+      })));
+      return rows.length;
+    }
+    const lowdb = getLowdb();
+    const followers = (lowdb.data.publicUserFollows || []).filter(f => f.authorId === article.authorId);
+    await Promise.all(followers.map(f => db.createNotification({
+      publicUserId: f.publicUserId,
+      type: 'new_article',
+      title: `${article.author || 'A journalist'} published a new story`,
+      body: article.title,
+      url: `/article/${article.slug}`,
+      dedupeKey: `new-article:${article.id}:${f.publicUserId}`
+    })));
+    return followers.length;
+  },
+
+  async getNotifications(publicUserId) {
+    const readerId = parseInt(publicUserId, 10);
+    if (!readerId) return [];
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        'SELECT * FROM notifications WHERE public_user_id=$1 ORDER BY created_at DESC LIMIT 80',
+        [readerId]
+      );
+      return rows.map(pgToNotification);
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.notifications || [])
+      .filter(n => n.publicUserId === readerId)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 80);
+  },
+
+  async getUnreadNotificationCount(publicUserId) {
+    const readerId = parseInt(publicUserId, 10);
+    if (!readerId) return 0;
+    if (isPostgres) {
+      const { rows } = await pool.query(
+        'SELECT COUNT(*)::int AS count FROM notifications WHERE public_user_id=$1 AND read_at IS NULL',
+        [readerId]
+      );
+      return rows[0]?.count || 0;
+    }
+    const lowdb = getLowdb();
+    return (lowdb.data.notifications || []).filter(n => n.publicUserId === readerId && !n.readAt).length;
+  },
+
+  async markNotificationsRead(publicUserId) {
+    const readerId = parseInt(publicUserId, 10);
+    if (!readerId) return;
+    if (isPostgres) {
+      await pool.query('UPDATE notifications SET read_at=NOW() WHERE public_user_id=$1 AND read_at IS NULL', [readerId]);
+      return;
+    }
+    const lowdb = getLowdb();
+    (lowdb.data.notifications || []).forEach(n => {
+      if (n.publicUserId === readerId && !n.readAt) n.readAt = new Date().toISOString();
+    });
+    lowdb.write();
   },
 
   async getAuthorProfile(authorId, publicUserId = null) {
@@ -1415,6 +1549,20 @@ function pgToJournalistApplication(row) {
   };
 }
 
+function pgToNotification(row) {
+  return {
+    id: row.id,
+    publicUserId: row.public_user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body || '',
+    url: row.url || '',
+    dedupeKey: row.dedupe_key || '',
+    readAt: row.read_at,
+    createdAt: row.created_at
+  };
+}
+
 function pgToVideo(row) {
   return {
     id: row.id,
@@ -1483,6 +1631,7 @@ function initLowdb() {
   _lowdb.data.articleComments ||= [];
   _lowdb.data.articleCommentLikes ||= [];
   _lowdb.data.journalistApplications ||= [];
+  _lowdb.data.notifications ||= [];
   _lowdb.data.users ||= [];
   _lowdb.data.users.forEach(user => {
     user.location ||= '';

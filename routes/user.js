@@ -135,6 +135,20 @@ router.post('/account/profile', requirePublicUser, csrfProtection, async (req, r
   res.redirect('/account?profile=updated');
 });
 
+router.get('/notifications', requirePublicUser, async (req, res) => {
+  const notifications = await db.getNotifications(req.publicUser.id);
+  await db.markNotificationsRead(req.publicUser.id);
+  res.render('notifications', authViewData({
+    notifications,
+    page: 'notifications'
+  }));
+});
+
+router.post('/notifications/read', requirePublicUser, csrfProtection, async (req, res) => {
+  await db.markNotificationsRead(req.publicUser.id);
+  res.redirect('/notifications');
+});
+
 router.get('/apply-journalist', requirePublicUser, async (req, res) => {
   const application = await db.getJournalistApplicationByPublicUser(req.publicUser.id);
   res.render('apply-journalist', authViewData({
