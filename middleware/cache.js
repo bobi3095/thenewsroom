@@ -10,7 +10,7 @@ const cache = new NodeCache({ stdTTL: 120, checkperiod: 60 });
 
 // Cache keys
 const KEYS = {
-  home: 'page:home',
+  home: (sort = 'default') => `page:home:${sort}`,
   category: (slug) => `page:category:${slug}`,
   article: (slug) => `page:article:${slug}`,
   latest: 'page:latest',

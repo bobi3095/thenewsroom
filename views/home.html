@@ -54,15 +54,23 @@
       display: flex;
       gap: 12px;
       overflow-x: auto;
-      padding: 0 0 30px;
+      padding: 0;
       scrollbar-width: none;
+    }
+
+    .topic-strip::-webkit-scrollbar { display: none; }
+
+    .feed-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       position: sticky;
       top: 109px;
       z-index: 20;
       background: #fff;
+      padding-bottom: 30px;
     }
-
-    .topic-strip::-webkit-scrollbar { display: none; }
 
     .topic-chip {
       flex: 0 0 auto;
@@ -81,6 +89,43 @@
     .topic-chip:hover {
       background: #0f0f0f;
       color: #fff;
+    }
+
+    .feed-sort-form {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feed-sort-label {
+      color: #606060;
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .feed-sort-select {
+      appearance: none;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      background: #fff;
+      color: #0f0f0f;
+      font: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      padding: 9px 34px 9px 13px;
+      cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, #0f0f0f 50%), linear-gradient(135deg, #0f0f0f 50%, transparent 50%);
+      background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .feed-sort-select:focus {
+      outline: none;
+      border-color: #0f0f0f;
+      box-shadow: 0 0 0 3px rgba(15,15,15,0.08);
     }
 
     .video-grid {
@@ -244,14 +289,27 @@
       }
 
       .topic-strip {
-        top: 103px;
         gap: 8px;
+      }
+
+      .feed-toolbar {
+        top: 103px;
+        align-items: stretch;
+        flex-direction: column;
         padding-bottom: 18px;
       }
 
       .topic-chip {
         font-size: 0.82rem;
         padding: 8px 12px;
+      }
+
+      .feed-sort-form {
+        justify-content: space-between;
+      }
+
+      .feed-sort-select {
+        min-width: 145px;
       }
 
       .video-grid {
@@ -266,16 +324,25 @@
 <%- include('partials/header.html') %>
 
 <main class="youtube-home">
-  <nav class="topic-strip" aria-label="Browse categories">
-    <a class="topic-chip active" href="/">All</a>
-    <% if (currentUser) { %>
-      <a class="topic-chip" href="/following">Following</a>
-    <% } %>
-    <a class="topic-chip" href="/latest">Latest</a>
-    <% categories.forEach(cat => { %>
-      <a class="topic-chip" href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>"><%= cat %></a>
-    <% }) %>
-  </nav>
+  <div class="feed-toolbar">
+    <nav class="topic-strip" aria-label="Browse categories">
+      <a class="topic-chip active" href="/">All</a>
+      <% if (currentUser) { %>
+        <a class="topic-chip" href="/following">Following</a>
+      <% } %>
+      <a class="topic-chip" href="/latest">Latest</a>
+      <% categories.forEach(cat => { %>
+        <a class="topic-chip" href="/category/<%= cat.toLowerCase().replace(/ /g,'-') %>"><%= cat %></a>
+      <% }) %>
+    </nav>
+    <form class="feed-sort-form" action="/" method="GET">
+      <label class="feed-sort-label" for="home-sort">Sort</label>
+      <select class="feed-sort-select" id="home-sort" name="sort" onchange="this.form.submit()">
+        <option value="default" <%= homeSort === 'default' ? 'selected' : '' %>>Default</option>
+        <option value="newest" <%= homeSort === 'newest' ? 'selected' : '' %>>Newest</option>
+      </select>
+    </form>
+  </div>
 
   <% const feedArticles = articles || []; %>
 

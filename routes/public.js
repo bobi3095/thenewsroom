@@ -78,12 +78,14 @@ function buildFairFeed(articles, followedAuthorIds = new Set()) {
 }
 
 // Homepage
-router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
+router.get('/', cacheMiddleware(req => KEYS.home(req.query.sort === 'newest' ? 'newest' : 'default'), 120), async (req, res) => {
   try {
     const articles = await db.getArticles({ status: 'published' });
     const followedAuthors = req.publicUser ? await db.getFollowedAuthors(req.publicUser.id) : [];
     const followedAuthorIds = new Set(followedAuthors.map(author => Number(author.id)));
-    const fairFeedArticles = buildFairFeed(articles, followedAuthorIds);
+    const homeSort = req.query.sort === 'newest' ? 'newest' : 'default';
+    const newestArticles = [...articles].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const feedArticles = homeSort === 'newest' ? newestArticles : buildFairFeed(articles, followedAuthorIds);
     const trendingArticles = await db.getTrendingArticles(articles, 24);
 
     // Hero: admin-marked featured articles only
@@ -112,8 +114,9 @@ router.get('/', cacheMiddleware(KEYS.home, 120), async (req, res) => {
 
     res.render('home', {
       hero, heroSidebar, latestNews, todaysNews,
-      byCategory, bottomArticles, articles: fairFeedArticles, trendingArticles,
+      byCategory, bottomArticles, articles: feedArticles, trendingArticles,
       followedAuthors,
+      homeSort,
       categories: ALL_CATEGORIES,
       navCategories: NAV_CATEGORIES,
       moreCategories: MORE_CATEGORIES,
