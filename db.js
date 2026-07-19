@@ -241,7 +241,7 @@ const db = {
   // ── ARTICLES ──────────────────────────────────────────────────────
   async getArticles(filter = {}) {
     if (isPostgres) {
-      let q = `SELECT a.*, u.avatar as author_avatar, u.bio as author_bio
+      let q = `SELECT a.*, u.avatar as author_avatar, u.bio as author_bio, u.is_verified as author_verified
                FROM articles a LEFT JOIN users u ON a.author_id = u.id`;
       const conditions = [], vals = [];
       if (filter.status) { conditions.push(`a.status = $${vals.length+1}`); vals.push(filter.status); }
@@ -268,7 +268,7 @@ const db = {
       // join author info
       return arts.sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).map(a => {
         const user = lowdb.data.users.find(u => u.id === a.authorId);
-        return { ...a, authorAvatar: user?.avatar||'', authorBio: user?.bio||'' };
+        return { ...a, authorAvatar: user?.avatar||'', authorBio: user?.bio||'', authorVerified: user?.isVerified !== false };
       });
     }
   },
@@ -1484,6 +1484,7 @@ function pgToArticle(row) {
     coverPosition: row.cover_position || 'center center',
     authorAvatar: row.author_avatar || '',
     authorBio: row.author_bio || '',
+    authorVerified: row.author_verified !== false,
     createdAt: row.created_at, updatedAt: row.updated_at
   };
 }
