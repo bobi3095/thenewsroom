@@ -428,33 +428,6 @@ function removeCurrentImage() {
   if (flag) flag.value = '1';
 }
 
-// Auto-save to localStorage
-const SAVE_KEY = 'thenewsroom_draft_<%= article ? article.id : "new" %>';
-
-function autoSave() {
-  const title = document.querySelector('[name="title"]').value;
-  const content = document.getElementById('content-editor').innerHTML;
-  const excerpt = document.querySelector('[name="excerpt"]').value;
-  localStorage.setItem(SAVE_KEY, JSON.stringify({ title, content, excerpt, savedAt: new Date().toISOString() }));
-}
-
-setInterval(autoSave, 30000); // Auto-save every 30s
-
-// Restore autosave for new articles
-<% if (!article) { %>
-const saved = localStorage.getItem(SAVE_KEY);
-if (saved) {
-  try {
-    const data = JSON.parse(saved);
-    const restore = confirm(`Restore autosaved draft from ${new Date(data.savedAt).toLocaleTimeString()}?`);
-    if (restore) {
-      if (data.title) document.querySelector('[name="title"]').value = data.title;
-      if (data.content) document.getElementById('content-editor').innerHTML = data.content;
-      if (data.excerpt) document.querySelector('[name="excerpt"]').value = data.excerpt;
-    }
-  } catch(e) {}
-}
-<% } %>
 </script>
 <!-- Image Insert Modal -->
 <div id="image-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
