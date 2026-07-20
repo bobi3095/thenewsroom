@@ -16,12 +16,43 @@
     #content-editor figure.article-image { margin:1.5em auto; max-width:100%; }
     #content-editor figure.article-image img { width:100%; height:auto; display:block; }
     #content-editor figure.article-image.is-selected { outline:2px solid #c8102e; outline-offset:4px; }
+    #content-editor .article-embed,
+    #content-editor .embed-twitter,
+    #content-editor .embed-instagram {
+      position: relative;
+      margin: 1.5em 0;
+      padding: 10px;
+      border: 1px dashed var(--border);
+      background: #fafafa;
+    }
+    #content-editor .article-embed.is-selected,
+    #content-editor .embed-twitter.is-selected,
+    #content-editor .embed-instagram.is-selected {
+      outline: 2px solid #c8102e;
+      outline-offset: 4px;
+      border-color: #c8102e;
+    }
+    #content-editor .article-embed-frame {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      background: #111;
+    }
+    #content-editor .article-embed-frame iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
     .image-edit-panel { display:none; align-items:center; flex-wrap:wrap; gap:8px; padding:10px; margin-top:8px; background:#fff; border:1px solid var(--border); border-left:3px solid var(--accent); }
     .image-edit-panel.active { display:flex; }
     .image-edit-panel label { font-size:0.72rem; color:var(--muted); font-weight:600; }
     .image-edit-panel input[type="range"] { width:150px; }
     .image-edit-panel button { border:1px solid var(--border); background:#fff; padding:5px 8px; cursor:pointer; font-size:0.75rem; }
     .image-edit-panel button:hover { border-color:var(--ink); color:var(--accent); }
+    .embed-edit-panel span { font-size:0.75rem; color:var(--ink); font-weight:700; }
     .cover-controls { display:grid; gap:10px; margin-top:12px; }
     .cover-controls label { display:grid; gap:4px; font-size:0.72rem; color:var(--muted); font-weight:600; }
     .cover-controls select, .cover-controls input[type="range"] { width:100%; }
@@ -109,6 +140,10 @@
                 <button type="button" onclick="alignSelectedImage('center')">Center</button>
                 <button type="button" onclick="alignSelectedImage('right')">Right</button>
                 <button type="button" onclick="removeSelectedImage()">Remove</button>
+              </div>
+              <div id="embed-edit-panel" class="image-edit-panel embed-edit-panel">
+                <span>Embedded post selected</span>
+                <button type="button" onclick="removeSelectedEmbed()">Remove embed</button>
               </div>
             </div>
           </div>
@@ -245,6 +280,7 @@
 // Sync contenteditable to hidden input before submit
 function prepareSubmit() {
   normalizeEditorImages();
+  normalizeEditorEmbeds();
   document.getElementById('content-hidden').value = document.getElementById('content-editor').innerHTML;
 }
 
@@ -287,6 +323,7 @@ function insertImage() {
 }
 
 let selectedImageFigure = null;
+let selectedEmbedBlock = null;
 
 function escapeHtml(value) {
   return String(value || '').replace(/[&<>"']/g, char => ({
@@ -319,8 +356,23 @@ function normalizeEditorImages() {
   });
 }
 
-function selectEditorImage(figure) {
+function normalizeEditorEmbeds() {
+  document.querySelectorAll('#content-editor .article-embed, #content-editor .embed-twitter, #content-editor .embed-instagram').forEach(embed => {
+    embed.classList.remove('is-selected');
+  });
+}
+
+function clearEditorSelections() {
   if (selectedImageFigure) selectedImageFigure.classList.remove('is-selected');
+  if (selectedEmbedBlock) selectedEmbedBlock.classList.remove('is-selected');
+  selectedImageFigure = null;
+  selectedEmbedBlock = null;
+  document.getElementById('image-edit-panel')?.classList.remove('active');
+  document.getElementById('embed-edit-panel')?.classList.remove('active');
+}
+
+function selectEditorImage(figure) {
+  clearEditorSelections();
   selectedImageFigure = figure;
   selectedImageFigure.classList.add('is-selected');
   const widthMatch = (figure.getAttribute('style') || '').match(/width:\s*(\d+)%/i);
@@ -330,6 +382,13 @@ function selectEditorImage(figure) {
   if (sizeInput) sizeInput.value = width;
   if (sizeValue) sizeValue.textContent = width + '%';
   document.getElementById('image-edit-panel')?.classList.add('active');
+}
+
+function selectEditorEmbed(embed) {
+  clearEditorSelections();
+  selectedEmbedBlock = embed;
+  selectedEmbedBlock.classList.add('is-selected');
+  document.getElementById('embed-edit-panel')?.classList.add('active');
 }
 
 function resizeSelectedImage(value) {
@@ -355,6 +414,13 @@ function removeSelectedImage() {
   selectedImageFigure.remove();
   selectedImageFigure = null;
   document.getElementById('image-edit-panel')?.classList.remove('active');
+}
+
+function removeSelectedEmbed() {
+  if (!selectedEmbedBlock) return;
+  selectedEmbedBlock.remove();
+  selectedEmbedBlock = null;
+  document.getElementById('embed-edit-panel')?.classList.remove('active');
 }
 
 function updateCoverPreview() {
@@ -405,19 +471,24 @@ document.getElementById('content-editor').addEventListener('keydown', e => {
 });
 
 document.getElementById('content-editor').addEventListener('click', e => {
+  const embed = e.target.closest('.article-embed, .embed-twitter, .embed-instagram');
+  if (embed && document.getElementById('content-editor').contains(embed)) {
+    selectEditorEmbed(embed);
+    return;
+  }
+
   const figure = e.target.closest('figure.article-image');
   if (figure && document.getElementById('content-editor').contains(figure)) {
     selectEditorImage(figure);
     return;
   }
-  if (!e.target.closest('#image-edit-panel')) {
-    if (selectedImageFigure) selectedImageFigure.classList.remove('is-selected');
-    selectedImageFigure = null;
-    document.getElementById('image-edit-panel')?.classList.remove('active');
+  if (!e.target.closest('#image-edit-panel') && !e.target.closest('#embed-edit-panel')) {
+    clearEditorSelections();
   }
 });
 
 normalizeEditorImages();
+normalizeEditorEmbeds();
 updateCoverPreview();
 
 // Remove current image

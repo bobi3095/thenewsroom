@@ -233,6 +233,14 @@
       display: flex;
       justify-content: center;
     }
+    .article-body .article-embed.is-fallback {
+      display: block;
+      width: 100% !important;
+      max-width: 680px;
+      margin: 1.7em 0;
+      min-height: 0 !important;
+      height: auto !important;
+    }
     .article-body .instagram-media,
     .article-body .twitter-tweet {
       margin-left: auto !important;
@@ -243,10 +251,25 @@
     .article-body .article-embed-fallback {
       border: 1px solid #dedbd4;
       border-radius: 8px;
-      padding: 14px;
+      padding: 16px 18px;
       background: #fff;
-      font-size: 0.86rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
       overflow-wrap: anywhere;
+      width: 100%;
+      max-width: 680px;
+      min-height: 0;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+    .article-body .article-embed-fallback strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #111;
+      font-size: 0.95rem;
+    }
+    .article-body .article-embed-fallback a {
+      color: #d1122f;
+      font-weight: 800;
     }
     .article-body .article-embed.is-broken,
     .article-body .article-embed-frame.is-broken {
@@ -255,6 +278,11 @@
     .article-body .article-embed.is-fallback .instagram-media,
     .article-body .article-embed.is-fallback .twitter-tweet {
       display: none !important;
+    }
+    .article-body .article-embed.is-fallback iframe {
+      display: none !important;
+      height: 0 !important;
+      min-height: 0 !important;
     }
     .article-body .article-embed.is-fallback .article-embed-fallback {
       display: block;
