@@ -202,6 +202,47 @@
     }
     .article-body li { font-size: 0.95rem; line-height: 1.68; }
     .article-body blockquote { border-left-width: 4px; padding: 18px 22px; background: #faf7f4; }
+    .article-body .article-embed {
+      width: 100%;
+      max-width: 680px;
+      margin: 1.7em 0;
+    }
+    .article-body .article-embed-frame {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 8px;
+      background: #0b0b0b;
+    }
+    .article-body .article-embed-frame iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .article-body .article-embed.is-instagram,
+    .article-body .article-embed.is-twitter {
+      display: flex;
+      justify-content: center;
+    }
+    .article-body .instagram-media,
+    .article-body .twitter-tweet {
+      margin-left: auto !important;
+      margin-right: auto !important;
+      max-width: 540px !important;
+      width: 100% !important;
+    }
+    .article-body .article-embed-fallback {
+      border: 1px solid #dedbd4;
+      border-radius: 8px;
+      padding: 14px;
+      background: #fff;
+      font-size: 0.86rem;
+      overflow-wrap: anywhere;
+    }
     .journalist-card, .trust-card, .discussion-panel, .sidebar-card {
       border: 1px solid #dedbd4; background: white; border-radius: 8px;
       box-shadow: 0 1px 0 rgba(0,0,0,0.03);
@@ -331,6 +372,9 @@
       .article-body p { font-size: 0.94rem; line-height: 1.68; }
       .article-body h2 { font-size: 1.14rem; }
       .article-body h3 { font-size: 1.04rem; }
+      .article-body .article-embed { max-width: 100%; }
+      .article-body .article-embed.is-instagram,
+      .article-body .article-embed.is-twitter { display: block; }
       .mobile-sticky-actions {
         position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; display: grid;
         grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 8px; background: rgba(255,255,255,0.96);
@@ -682,6 +726,21 @@ document.getElementById('copy-btn').addEventListener('click', function() {
     }, 2000);
   });
 });
+
+if (document.querySelector('.twitter-tweet')) {
+  const twitterScript = document.createElement('script');
+  twitterScript.src = 'https://platform.twitter.com/widgets.js';
+  twitterScript.async = true;
+  twitterScript.charset = 'utf-8';
+  document.body.appendChild(twitterScript);
+}
+
+if (document.querySelector('.instagram-media')) {
+  const instagramScript = document.createElement('script');
+  instagramScript.src = 'https://www.instagram.com/embed.js';
+  instagramScript.async = true;
+  document.body.appendChild(instagramScript);
+}
 </script>
 </body>
 </html>

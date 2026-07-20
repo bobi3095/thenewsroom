@@ -19,13 +19,13 @@ function securityHeaders(req, res, next) {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://platform.twitter.com https://cdn.syndication.twimg.com https://www.instagram.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
       "media-src 'self' data: https:",
       "connect-src 'self'",
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://platform.twitter.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"

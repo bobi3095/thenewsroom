@@ -708,77 +708,121 @@ function switchVidTab(tab) {
 }
 
 // Insert Twitter/X embed
-function insertTwitterEmbed() {
-  var url = document.getElementById('twitter-url-input').value.trim();
-  if (!url) { alert('Please paste a Twitter/X post URL'); return; }
-  if (!url.includes('twitter.com') && !url.includes('x.com')) {
-    alert('That does not look like a Twitter/X URL. It should contain twitter.com or x.com'); return;
+function getSafeUrl(rawUrl) {
+  try {
+    return new URL(rawUrl.trim());
+  } catch {
+    return null;
   }
-  var html = '<div style="margin:1.5em 0;max-width:550px">'
-    + '<blockquote class="twitter-tweet" data-lang="en">'
-    + '<a href="' + url + '"></a>'
-    + '</blockquote>'
+}
+
+function escapeAttr(value) {
+  return String(value || '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+function getYoutubeVideoId(rawUrl) {
+  const parsed = getSafeUrl(rawUrl);
+  if (!parsed) return '';
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  if (host === 'youtu.be') return parsed.pathname.split('/').filter(Boolean)[0] || '';
+  if (host === 'youtube.com' || host === 'm.youtube.com') {
+    if (parsed.pathname === '/watch') return parsed.searchParams.get('v') || '';
+    const parts = parsed.pathname.split('/').filter(Boolean);
+    if (['embed', 'shorts', 'live'].includes(parts[0])) return parts[1] || '';
+  }
+  return '';
+}
+
+function getInstagramPermalink(rawUrl) {
+  const parsed = getSafeUrl(rawUrl);
+  if (!parsed) return '';
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  if (host !== 'instagram.com') return '';
+  const match = parsed.pathname.match(/^\/(p|reel|tv)\/([A-Za-z0-9_-]+)\/?/);
+  return match ? 'https://www.instagram.com/' + match[1] + '/' + match[2] + '/' : '';
+}
+
+function getTwitterPermalink(rawUrl) {
+  const parsed = getSafeUrl(rawUrl);
+  if (!parsed) return '';
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+  if (host !== 'x.com' && host !== 'twitter.com') return '';
+  const match = parsed.pathname.match(/^\/([A-Za-z0-9_]+)\/status\/([0-9]+)\/?/);
+  return match ? 'https://x.com/' + match[1] + '/status/' + match[2] : '';
+}
+
+function insertTwitterEmbed() {
+  const url = document.getElementById('twitter-url-input').value.trim();
+  const cleanUrl = getTwitterPermalink(url);
+  if (!cleanUrl) {
+    alert('Please enter a valid Twitter/X URL like: https://x.com/user/status/123...'); return;
+  }
+  const safeUrl = escapeAttr(cleanUrl);
+  const html = '<div class="article-embed is-twitter" data-url="' + safeUrl + '">'
+    + '<blockquote class="twitter-tweet" data-lang="en"><a href="' + safeUrl + '"></a></blockquote>'
     + '</div><p></p>';
   closeModal('video-modal');
   restoreAndInsert(html);
   document.getElementById('twitter-url-input').value = '';
+  if (!window.twttr) {
+    const s = document.createElement('script');
+    s.src = 'https://platform.twitter.com/widgets.js';
+    s.async = true;
+    document.head.appendChild(s);
+  } else if (window.twttr && window.twttr.widgets) {
+    window.twttr.widgets.load();
+  }
 }
-
 // Insert Instagram embed
 function insertInstagramEmbed() {
-  var url = document.getElementById('instagram-url-input').value.trim();
-  if (!url) { alert('Please paste an Instagram post URL'); return; }
-  if (!url.includes('instagram.com')) {
-    alert('That does not look like an Instagram URL'); return;
+  const url = document.getElementById('instagram-url-input').value.trim();
+  const permalink = getInstagramPermalink(url);
+  if (!permalink) {
+    alert('Please enter a valid Instagram URL like: https://www.instagram.com/reel/ABC123/'); return;
   }
-  // Normalise URL - remove query params, ensure trailing slash
-  var cleanUrl = url.split('?')[0].replace(/\/$/, '') + '/';
-  var html = '<div style="margin:1.5em 0;max-width:540px">'
-    + '<blockquote class="instagram-media" '
-    + 'data-instgrm-permalink="' + cleanUrl + '" '
-    + 'data-instgrm-version="14" '
-    + 'style="background:#FFF;border:0;border-radius:3px;'
-    + 'box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);'
-    + 'margin:1px;max-width:540px;min-width:326px;padding:0;width:calc(100% - 2px)">'
-    + '<a href="' + cleanUrl + '" target="_blank">View this post on Instagram</a>'
+  const safeUrl = escapeAttr(permalink);
+  const html = '<div class="article-embed is-instagram">'
+    + '<blockquote class="instagram-media" data-instgrm-permalink="' + safeUrl + '" data-instgrm-version="14"'
+    + ' style="background:#fff;border:0;border-radius:3px;margin:1px;max-width:540px;min-width:326px;padding:0;width:100%">'
+    + '<a href="' + safeUrl + '" target="_blank" rel="noopener">View this post on Instagram</a>'
     + '</blockquote>'
     + '</div><p></p>';
   closeModal('video-modal');
   restoreAndInsert(html);
   document.getElementById('instagram-url-input').value = '';
+  if (!window.instgrm) {
+    const s = document.createElement('script');
+    s.src = 'https://www.instagram.com/embed.js';
+    s.async = true;
+    document.head.appendChild(s);
+  } else if (window.instgrm && window.instgrm.Embeds) {
+    window.instgrm.Embeds.process();
+  }
 }
-
 // Insert YouTube embed
 function insertYoutubeEmbed() {
-  var url = document.getElementById('youtube-url-input').value.trim();
-  if (!url) { alert('Please paste a YouTube video URL'); return; }
-  var videoId = '';
-  // Handle various YouTube URL formats
-  var patterns = [
-    /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
-    /youtu\.be\/([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
-  ];
-  for (var i = 0; i < patterns.length; i++) {
-    var m = url.match(patterns[i]);
-    if (m) { videoId = m[1]; break; }
-  }
-  if (!videoId) {
-    alert('Could not find a YouTube video ID. Make sure the URL looks like:\nhttps://www.youtube.com/watch?v=XXXXXXXXXXX'); return;
-  }
-  var html = '<div style="margin:1.5em 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:4px">'
-    + '<iframe src="https://www.youtube.com/embed/' + videoId + '" '
-    + 'frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" '
-    + 'allowfullscreen '
-    + 'style="position:absolute;top:0;left:0;width:100%;height:100%">'
-    + '</iframe>'
+  const url = document.getElementById('youtube-url-input').value.trim();
+  if (!url) { alert('Please enter a YouTube URL'); return; }
+  const videoId = getYoutubeVideoId(url);
+  if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) { alert('Could not extract YouTube video ID. Check the URL.'); return; }
+  const safeId = escapeAttr(videoId);
+  const html = '<div class="article-embed is-youtube">'
+    + '<div class="article-embed-frame">'
+    + '<iframe src="https://www.youtube.com/embed/' + safeId + '" title="YouTube video player" loading="lazy" frameborder="0" '
+    + 'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" '
+    + 'referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="true"></iframe>'
+    + '</div>'
     + '</div><p></p>';
   closeModal('video-modal');
   restoreAndInsert(html);
   document.getElementById('youtube-url-input').value = '';
 }
-
 // Upload video from PC
 async function uploadInlineVideo(input) {
   if (!input.files || !input.files[0]) return;
@@ -848,368 +892,5 @@ if (saved) {
 }
 <% } %>
 </script>
-<!-- Image Insert Modal -->
-<div id="image-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:white;width:480px;max-width:95vw;padding:28px;position:relative">
-    <button onclick="closeModal('image-modal')" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888">✕</button>
-    <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:20px">Insert Image</div>
-
-    <!-- Tabs -->
-    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">
-      <button onclick="switchImgTab('url')" id="tab-url" style="padding:8px 20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;color:var(--ink)">By URL</button>
-      <button onclick="switchImgTab('upload')" id="tab-upload" style="padding:8px 20px;font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--muted)">Upload from PC</button>
-    </div>
-
-    <!-- URL tab -->
-    <div id="img-url-panel">
-      <label class="form-label">Image URL</label>
-      <input type="text" id="img-url-input" class="form-control" placeholder="https://example.com/image.jpg" style="margin-bottom:12px">
-      <label class="form-label">Alt Text (optional)</label>
-      <input type="text" id="img-alt-input" class="form-control" placeholder="Describe the image..." style="margin-bottom:16px">
-      <button onclick="insertImageFromUrl()" class="btn btn-accent" style="width:100%">Insert Image</button>
-    </div>
-
-    <!-- Upload tab -->
-    <div id="img-upload-panel" style="display:none">
-      <div style="border:2px dashed var(--border);padding:32px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('inline-img-input').click()">
-        <div style="font-size:2rem;margin-bottom:8px">🖼</div>
-        <p style="font-size:0.82rem;color:var(--muted)">Click to select image from your PC</p>
-        <p style="font-size:0.72rem;color:var(--muted);margin-top:4px">JPG, PNG, WEBP</p>
-      </div>
-      <input type="file" id="inline-img-input" accept="image/*" style="display:none" onchange="uploadInlineImage(this)">
-      <div id="img-upload-status" style="font-size:0.82rem;color:var(--muted);text-align:center"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Video/Embed Insert Modal -->
-<div id="video-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center">
-  <div style="background:white;width:500px;max-width:96vw;padding:28px;position:relative;max-height:90vh;overflow-y:auto">
-    <button onclick="closeModal('video-modal')" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">✕</button>
-    <div style="font-family:var(--serif);font-size:1.1rem;font-weight:700;margin-bottom:20px">Insert Video / Embed</div>
-
-    <!-- Tabs -->
-    <div style="display:flex;border-bottom:2px solid var(--border);margin-bottom:20px">
-      <button onclick="switchVidTab('twitter')" id="vtab-twitter" class="vtab-btn vtab-active">𝕏 Twitter</button>
-      <button onclick="switchVidTab('instagram')" id="vtab-instagram" class="vtab-btn">📷 Instagram</button>
-      <button onclick="switchVidTab('youtube')" id="vtab-youtube" class="vtab-btn">▶ YouTube</button>
-      <button onclick="switchVidTab('upload')" id="vtab-upload" class="vtab-btn">📁 Upload</button>
-    </div>
-
-    <!-- Twitter/X tab -->
-    <div id="vid-twitter-panel">
-      <label class="form-label">Twitter / X Post URL</label>
-      <input type="text" id="twitter-url-input" class="form-control" placeholder="https://x.com/username/status/1234567890" style="margin-bottom:8px">
-      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:16px">Paste the full link of any tweet or X post</p>
-      <button onclick="insertTwitterEmbed()" class="btn btn-accent" style="width:100%">✅ Embed Post</button>
-    </div>
-
-    <!-- Instagram tab -->
-    <div id="vid-instagram-panel" style="display:none">
-      <label class="form-label">Instagram Post / Reel URL</label>
-      <input type="text" id="instagram-url-input" class="form-control" placeholder="https://www.instagram.com/p/ABC123xyz/" style="margin-bottom:8px">
-      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:4px">Works with posts and reels. Example:</p>
-      <p style="font-size:0.72rem;color:#c8102e;margin-bottom:16px;font-family:monospace">https://www.instagram.com/p/ABC123/</p>
-      <button onclick="insertInstagramEmbed()" class="btn btn-accent" style="width:100%">✅ Embed Post</button>
-    </div>
-
-    <!-- YouTube tab -->
-    <div id="vid-youtube-panel" style="display:none">
-      <label class="form-label">YouTube Video URL</label>
-      <input type="text" id="youtube-url-input" class="form-control" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" style="margin-bottom:8px">
-      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:4px">Paste full YouTube URL. Also works with youtu.be links.</p>
-      <p style="font-size:0.72rem;color:#c8102e;margin-bottom:16px;font-family:monospace">https://youtu.be/dQw4w9WgXcQ</p>
-      <button onclick="insertYoutubeEmbed()" class="btn btn-accent" style="width:100%">✅ Embed Video</button>
-    </div>
-
-    <!-- Upload tab -->
-    <div id="vid-upload-panel" style="display:none">
-      <div style="border:2px dashed var(--border);padding:32px;text-align:center;margin-bottom:16px;cursor:pointer;transition:border-color 0.15s" onclick="document.getElementById('inline-vid-input').click()" onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="font-size:2.5rem;margin-bottom:8px">🎬</div>
-        <p style="font-size:0.85rem;color:var(--muted)">Click to select video from your PC</p>
-        <p style="font-size:0.72rem;color:var(--muted);margin-top:6px">MP4, MOV, WEBM — max 50MB</p>
-      </div>
-      <input type="file" id="inline-vid-input" accept="video/*" style="display:none" onchange="uploadInlineVideo(this)">
-      <div id="vid-upload-status" style="font-size:0.82rem;color:var(--muted);text-align:center;padding:8px;min-height:24px"></div>
-    </div>
-  </div>
-</div>
-
-<style>
-.vtab-btn {
-  padding: 8px 14px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  border: none;
-  background: none;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  color: var(--muted);
-  transition: all 0.15s;
-}
-.vtab-btn:hover { color: var(--ink); }
-.vtab-active { border-bottom-color: var(--accent) !important; color: var(--ink) !important; }
-</style>
-
-<script>
-// ── CURSOR POSITION SAVING ──
-let savedRange = null;
-
-function saveCursor() {
-  const editor = document.getElementById('content-editor');
-  editor.focus();
-  const sel = window.getSelection();
-  if (sel && sel.rangeCount > 0) {
-    savedRange = sel.getRangeAt(0).cloneRange();
-  }
-}
-
-function restoreAndInsert(html) {
-  const editor = document.getElementById('content-editor');
-  editor.focus();
-  if (savedRange) {
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(savedRange);
-    document.execCommand('insertHTML', false, html);
-    savedRange = null;
-  } else {
-    // Fallback: insert at end
-    editor.focus();
-    document.execCommand('insertHTML', false, html);
-  }
-}
-
-// ── MODAL HELPERS ──
-function showImageModal() {
-  saveCursor(); // Save cursor before opening modal
-  document.getElementById('image-modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('img-url-input').focus(), 100);
-}
-function showVideoModal() {
-  saveCursor(); // Save cursor before opening modal
-  document.getElementById('video-modal').style.display = 'flex';
-}
-function closeModal(id) {
-  document.getElementById(id).style.display = 'none';
-}
-// Close on backdrop click
-document.getElementById('image-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('image-modal'); });
-document.getElementById('video-modal').addEventListener('click', function(e) { if(e.target===this) closeModal('video-modal'); });
-
-function getEditorCsrfToken() {
-  const inputToken = document.querySelector('input[name="_csrf"]')?.value;
-  if (inputToken) return inputToken;
-  const cookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrfToken='));
-  return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : '';
-}
-
-async function parseUploadResponse(res) {
-  const text = await res.text();
-  if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { error: text };
-  }
-}
-
-function uploadRequestOptions(csrfToken, formData) {
-  return {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'x-csrf-token': csrfToken
-    },
-    body: formData
-  };
-}
-
-function readEditorCsrfToken() {
-  if (typeof getEditorCsrfToken === 'function') return getEditorCsrfToken();
-  const inputToken = document.querySelector('input[name="_csrf"]')?.value;
-  if (inputToken) return inputToken;
-  const cookie = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrfToken='));
-  return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : '';
-}
-
-// ── IMAGE TABS ──
-function switchImgTab(tab) {
-  document.getElementById('img-url-panel').style.display = tab==='url' ? 'block' : 'none';
-  document.getElementById('img-upload-panel').style.display = tab==='upload' ? 'block' : 'none';
-  document.getElementById('tab-url').style.borderBottomColor = tab==='url' ? 'var(--accent)' : 'transparent';
-  document.getElementById('tab-url').style.color = tab==='url' ? 'var(--ink)' : 'var(--muted)';
-  document.getElementById('tab-upload').style.borderBottomColor = tab==='upload' ? 'var(--accent)' : 'transparent';
-  document.getElementById('tab-upload').style.color = tab==='upload' ? 'var(--ink)' : 'var(--muted)';
-}
-
-// Insert image from URL
-function insertImageFromUrl() {
-  const url = document.getElementById('img-url-input').value.trim();
-  const alt = document.getElementById('img-alt-input').value.trim() || 'Image';
-  if (!url) { alert('Please enter an image URL'); return; }
-  const html = buildImageFigure(url, alt);
-  closeModal('image-modal');
-  restoreAndInsert(html);
-  document.getElementById('img-url-input').value = '';
-  document.getElementById('img-alt-input').value = '';
-}
-
-// Upload image from PC and insert
-async function uploadInlineImage(input) {
-  if (!input.files || !input.files[0]) return;
-  const status = document.getElementById('img-upload-status');
-  status.textContent = '⏳ Uploading...';
-  const formData = new FormData();
-  formData.append('image', input.files[0]);
-  try {
-    const csrfToken = readEditorCsrfToken();
-    formData.append('_csrf', csrfToken);
-    const res = await fetch('/admin/upload-image', uploadRequestOptions(csrfToken, formData));
-    const data = await parseUploadResponse(res);
-    if (!res.ok) {
-      status.textContent = '❌ Upload failed: ' + (data.error || res.statusText);
-      return;
-    }
-    if (data.url) {
-      const html = buildImageFigure(data.url, 'Uploaded image');
-      status.textContent = '✅ Image inserted!';
-      setTimeout(() => { closeModal('image-modal'); restoreAndInsert(html); status.textContent = ''; input.value=''; }, 500);
-    } else {
-      status.textContent = '❌ Upload failed. Try again.';
-    }
-  } catch(e) {
-    status.textContent = '❌ Error: ' + e.message;
-  }
-}
-
-// ── VIDEO TABS ──
-function switchVidTab(tab) {
-  ['twitter','instagram','youtube','upload'].forEach(function(t) {
-    document.getElementById('vid-'+t+'-panel').style.display = (t===tab) ? 'block' : 'none';
-    var btn = document.getElementById('vtab-'+t);
-    if (t===tab) {
-      btn.classList.add('vtab-active');
-    } else {
-      btn.classList.remove('vtab-active');
-    }
-  });
-}
-
-// Insert Twitter/X embed
-function insertTwitterEmbed() {
-  const url = document.getElementById('twitter-url-input').value.trim();
-  if (!url || (!url.includes('x.com') && !url.includes('twitter.com'))) {
-    alert('Please enter a valid Twitter/X URL like: https://x.com/user/status/123...'); return;
-  }
-  // Use oEmbed placeholder - renders properly on article page
-  const html = '<div class="embed-twitter" data-url="' + url + '" style="margin:1.5em 0;background:#f8f9fa;border:1px solid #e1e4e8;border-radius:8px;padding:20px;text-align:center">'
-    + '<p style="font-size:0.82rem;color:#666;margin-bottom:8px">🐦 Twitter/X Embed</p>'
-    + '<a href="' + url + '" target="_blank" rel="noopener" style="color:#1da1f2;font-size:0.85rem;word-break:break-all;display:block;margin-bottom:8px">' + url + '</a>'
-    + '<blockquote class="twitter-tweet" data-lang="en"><a href="' + url + '"></a></blockquote>'
-    + '</div><p></p>';
-  closeModal('video-modal');
-  restoreAndInsert(html);
-  document.getElementById('twitter-url-input').value = '';
-  // Load Twitter widget script if not already loaded
-  if (!window.twttr) {
-    const s = document.createElement('script');
-    s.src = 'https://platform.twitter.com/widgets.js';
-    s.async = true;
-    document.head.appendChild(s);
-  } else if (window.twttr && window.twttr.widgets) {
-    window.twttr.widgets.load();
-  }
-}
-
-// Insert Instagram embed
-function insertInstagramEmbed() {
-  const url = document.getElementById('instagram-url-input').value.trim();
-  if (!url || !url.includes('instagram.com')) {
-    alert('Please enter a valid Instagram URL like: https://www.instagram.com/p/ABC123/'); return;
-  }
-  // Extract post shortcode
-  const match = url.match(/instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
-  if (!match) { alert('Could not read Instagram URL. Make sure it looks like: https://www.instagram.com/p/ABC123/'); return; }
-  const shortcode = match[2];
-  const html = '<div class="embed-instagram" style="margin:1.5em 0;max-width:540px">'
-    + '<blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/' + shortcode + '/" data-instgrm-version="14"'
-    + ' style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:1px;max-width:540px;min-width:326px;padding:0;width:calc(100% - 2px)">'
-    + '<a href="https://www.instagram.com/p/' + shortcode + '/" target="_blank">View on Instagram</a>'
-    + '</blockquote>'
-    + '</div><p></p>';
-  closeModal('video-modal');
-  restoreAndInsert(html);
-  document.getElementById('instagram-url-input').value = '';
-  // Load Instagram embed script
-  if (!window.instgrm) {
-    const s = document.createElement('script');
-    s.src = 'https://www.instagram.com/embed.js';
-    s.async = true;
-    document.head.appendChild(s);
-  } else if (window.instgrm && window.instgrm.Embeds) {
-    window.instgrm.Embeds.process();
-  }
-}
-
-// Insert YouTube embed
-function insertYoutubeEmbed() {
-  const url = document.getElementById('youtube-url-input').value.trim();
-  if (!url) { alert('Please enter a YouTube URL'); return; }
-  // Extract video ID
-  let videoId = '';
-  const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (match) videoId = match[1];
-  if (!videoId) { alert('Could not extract YouTube video ID. Check the URL.'); return; }
-  const html = '<div style="margin:1.5em 0;position:relative;padding-bottom:56.25%;height:0;overflow:hidden">'
-    + '<iframe src="https://www.youtube.com/embed/' + videoId + '" frameborder="0" allowfullscreen'
-    + ' style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe>'
-    + '</div><p></p>';
-  closeModal('video-modal');
-  restoreAndInsert(html);
-  document.getElementById('youtube-url-input').value = '';
-}
-
-// Upload video from PC
-async function uploadInlineVideo(input) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  const status = document.getElementById('vid-upload-status');
-
-  if (file.size > 50 * 1024 * 1024) {
-    status.textContent = '❌ File too large. Max 50MB.'; return;
-  }
-
-  status.textContent = '⏳ Uploading video... this may take a moment';
-  const formData = new FormData();
-  formData.append('image', file); // reuse upload endpoint
-
-  try {
-    const csrfToken = readEditorCsrfToken();
-    formData.append('_csrf', csrfToken);
-    const res = await fetch('/admin/upload-image', uploadRequestOptions(csrfToken, formData));
-    const data = await parseUploadResponse(res);
-    if (!res.ok) {
-      status.textContent = '❌ Upload failed: ' + (data.error || res.statusText);
-      return;
-    }
-    if (data.url) {
-      const html = '<div style="margin:1.5em 0"><video controls style="max-width:100%;height:auto;display:block">'
-        + '<source src="' + data.url + '" type="' + file.type + '">'
-        + 'Your browser does not support the video tag.</video></div><p></p>';
-      status.textContent = '✅ Video inserted!';
-      setTimeout(() => { closeModal('video-modal'); restoreAndInsert(html); status.textContent=''; input.value=''; }, 500);
-    } else {
-      status.textContent = '❌ Upload failed: ' + (data.error || 'Unknown error');
-    }
-  } catch(e) {
-    status.textContent = '❌ Error: ' + e.message;
-  }
-}
-</script>
-
 </body>
 </html>
