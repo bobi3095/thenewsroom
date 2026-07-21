@@ -236,8 +236,8 @@
     .article-body .article-embed.is-fallback {
       display: block;
       width: 100% !important;
-      max-width: 680px;
-      margin: 1.7em 0;
+      max-width: 540px;
+      margin: 1.7em auto;
       min-height: 0 !important;
       height: auto !important;
     }
@@ -252,25 +252,99 @@
       display: none;
       border: 1px solid #dedbd4;
       border-radius: 8px;
-      padding: 16px 18px;
       background: #fff;
       font-size: 0.9rem;
       line-height: 1.55;
       overflow-wrap: anywhere;
       width: 100%;
-      max-width: 680px;
+      max-width: 540px;
       min-height: 0;
       box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+      overflow: hidden;
     }
-    .article-body .article-embed-fallback strong {
-      display: block;
-      margin-bottom: 4px;
+    .social-embed-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e5e2db;
+      background: #fff;
+    }
+    .social-embed-title {
+      font-weight: 900;
       color: #111;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
-    .article-body .article-embed-fallback a {
+    .social-embed-link {
       color: #d1122f;
+      font-size: 0.74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .social-embed-preview {
+      position: relative;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)),
+        #0b0b0b;
+    }
+    .social-embed-preview::before,
+    .social-embed-preview::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 18%;
+      background: #000;
+    }
+    .social-embed-preview::before { left: 0; }
+    .social-embed-preview::after { right: 0; }
+    .social-embed-play {
+      position: relative;
+      z-index: 1;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.24);
+    }
+    .social-embed-play::after {
+      content: "";
+      position: absolute;
+      left: 30px;
+      top: 22px;
+      border-left: 24px solid #d1122f;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+    }
+    .social-embed-note {
+      position: absolute;
+      left: 22%;
+      right: 22%;
+      bottom: 24px;
+      z-index: 1;
+      color: white;
+      text-align: center;
+      font-size: 0.88rem;
       font-weight: 800;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    }
+    .social-embed-preview-link {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      font-size: 0;
+    }
+    @media (max-width: 700px) {
+      .social-embed-preview { min-height: 260px; }
+      .social-embed-note { left: 12%; right: 12%; }
     }
     .article-body .article-embed.is-broken,
     .article-body .article-embed-frame.is-broken {
@@ -537,7 +611,16 @@
             var safeUrl = url || '#';
             var card = document.createElement('div');
             card.className = 'article-embed-fallback';
-            card.innerHTML = '<strong>' + label + '</strong><br><a href="' + safeUrl + '" target="_blank" rel="noopener">Open embedded post</a>';
+            card.innerHTML = ''
+              + '<div class="social-embed-header">'
+              + '<span class="social-embed-title">' + label + '</span>'
+              + '<a class="social-embed-link" href="' + safeUrl + '" target="_blank" rel="noopener">View profile</a>'
+              + '</div>'
+              + '<div class="social-embed-preview">'
+              + '<a class="social-embed-preview-link" href="' + safeUrl + '" target="_blank" rel="noopener">Open embedded post</a>'
+              + '<span class="social-embed-play" aria-hidden="true"></span>'
+              + '<span class="social-embed-note">Tap to watch this video/post on the original platform</span>'
+              + '</div>';
             return card;
           }
 
@@ -594,7 +677,7 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame) embed.classList.add('is-fallback');
+                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
               }, 3500);
             });
 
@@ -607,7 +690,7 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame) embed.classList.add('is-fallback');
+                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
               }, 3500);
             });
 
@@ -623,7 +706,7 @@
               embed.appendChild(makeFallback(url, isTwitter ? 'X / Twitter post' : 'Instagram post'));
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame) embed.classList.add('is-fallback');
+                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
               }, 3500);
             });
           }
