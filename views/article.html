@@ -249,6 +249,7 @@
       width: 100% !important;
     }
     .article-body .article-embed-fallback {
+      display: none;
       border: 1px solid #dedbd4;
       border-radius: 8px;
       padding: 16px 18px;
@@ -593,7 +594,7 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 720) embed.classList.add('is-fallback');
+                if (!frame) embed.classList.add('is-fallback');
               }, 3500);
             });
 
@@ -606,7 +607,7 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 720) embed.classList.add('is-fallback');
+                if (!frame) embed.classList.add('is-fallback');
               }, 3500);
             });
 
@@ -622,7 +623,7 @@
               embed.appendChild(makeFallback(url, isTwitter ? 'X / Twitter post' : 'Instagram post'));
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 720) embed.classList.add('is-fallback');
+                if (!frame) embed.classList.add('is-fallback');
               }, 3500);
             });
           }

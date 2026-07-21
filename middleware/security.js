@@ -25,7 +25,7 @@ function securityHeaders(req, res, next) {
       "img-src 'self' data: https:",
       "media-src 'self' data: https:",
       "connect-src 'self' https://platform.twitter.com https://cdn.syndication.twimg.com https://syndication.twitter.com https://www.instagram.com",
-      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://platform.twitter.com https://www.instagram.com",
+      "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://platform.twitter.com https://syndication.twitter.com https://www.instagram.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"
