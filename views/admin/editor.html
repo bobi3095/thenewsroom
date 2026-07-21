@@ -545,6 +545,7 @@ function removeCurrentImage() {
       <button onclick="switchVidTab('twitter')" id="vtab-twitter" class="vtab-btn vtab-active">𝕏 Twitter</button>
       <button onclick="switchVidTab('instagram')" id="vtab-instagram" class="vtab-btn">📷 Instagram</button>
       <button onclick="switchVidTab('youtube')" id="vtab-youtube" class="vtab-btn">▶ YouTube</button>
+      <button onclick="switchVidTab('embed')" id="vtab-embed" class="vtab-btn">Embed Code</button>
       <button onclick="switchVidTab('upload')" id="vtab-upload" class="vtab-btn">📁 Upload</button>
     </div>
 
@@ -572,6 +573,15 @@ function removeCurrentImage() {
       <p style="font-size:0.72rem;color:var(--muted);margin-bottom:4px">Paste full YouTube URL. Also works with youtu.be links.</p>
       <p style="font-size:0.72rem;color:#c8102e;margin-bottom:16px;font-family:monospace">https://youtu.be/dQw4w9WgXcQ</p>
       <button onclick="insertYoutubeEmbed()" class="btn btn-accent" style="width:100%">✅ Embed Video</button>
+    </div>
+
+    <!-- Embed code tab -->
+    <div id="vid-embed-panel" style="display:none">
+      <label class="form-label">Paste Embed Code</label>
+      <textarea id="embed-code-input" class="form-control" rows="5" placeholder='<iframe src="https://www.youtube.com/embed/VIDEO_ID" ...></iframe>' style="margin-bottom:8px"></textarea>
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:4px">Works with official YouTube iframe, Twitter/X blockquote, and Instagram blockquote embed codes.</p>
+      <p style="font-size:0.72rem;color:#c8102e;margin-bottom:16px">Script tags are removed automatically for security.</p>
+      <button onclick="insertEmbedCode()" class="btn btn-accent" style="width:100%">Insert Embed Code</button>
     </div>
 
     <!-- Upload tab -->
@@ -740,7 +750,7 @@ async function uploadInlineImage(input) {
 
 // ── VIDEO TABS ──
 function switchVidTab(tab) {
-  ['twitter','instagram','youtube','upload'].forEach(function(t) {
+  ['twitter','instagram','youtube','embed','upload'].forEach(function(t) {
     document.getElementById('vid-'+t+'-panel').style.display = (t===tab) ? 'block' : 'none';
     var btn = document.getElementById('vtab-'+t);
     if (t===tab) {
@@ -866,6 +876,72 @@ function insertYoutubeEmbed() {
   closeModal('video-modal');
   restoreAndInsert(html);
   document.getElementById('youtube-url-input').value = '';
+}
+
+function extractSafeEmbedHtml(rawCode) {
+  var template = document.createElement('template');
+  template.innerHTML = String(rawCode || '').replace(/<script[\s\S]*?<\/script>/gi, '');
+
+  var youtubeIframe = template.content.querySelector('iframe[src*="youtube.com/embed/"], iframe[src*="youtube-nocookie.com/embed/"]');
+  if (youtubeIframe) {
+    var src = youtubeIframe.getAttribute('src') || '';
+    try {
+      var parsed = new URL(src, window.location.origin);
+      var host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+      var match = parsed.pathname.match(/^\/embed\/([a-zA-Z0-9_-]{11})/);
+      if ((host === 'youtube.com' || host === 'youtube-nocookie.com') && match) {
+        var id = escapeAttr(match[1]);
+        return '<div class="article-embed is-youtube">'
+          + '<div class="article-embed-frame">'
+          + '<iframe src="https://www.youtube.com/embed/' + id + '" title="YouTube video player" loading="lazy" frameborder="0" '
+          + 'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" '
+          + 'referrerpolicy="strict-origin-when-cross-origin" allowfullscreen="true"></iframe>'
+          + '</div></div><p></p>';
+      }
+    } catch(e) {}
+  }
+
+  var twitterLink = template.content.querySelector('blockquote.twitter-tweet a[href*="/status/"], a[href*="/status/"]');
+  var twitterUrl = twitterLink ? getTwitterPermalink(twitterLink.href) : '';
+  if (twitterUrl) {
+    var safeTwitterUrl = escapeAttr(twitterUrl);
+    return '<div class="article-embed is-twitter" data-url="' + safeTwitterUrl + '">'
+      + '<blockquote class="twitter-tweet" data-lang="en"><a href="' + safeTwitterUrl + '"></a></blockquote>'
+      + '</div><p></p>';
+  }
+
+  var instagramBlock = template.content.querySelector('blockquote.instagram-media');
+  var instagramUrl = instagramBlock ? getInstagramPermalink(instagramBlock.getAttribute('data-instgrm-permalink') || '') : '';
+  if (!instagramUrl) {
+    var instagramLink = template.content.querySelector('a[href*="instagram.com/p/"], a[href*="instagram.com/reel/"], a[href*="instagram.com/tv/"]');
+    instagramUrl = instagramLink ? getInstagramPermalink(instagramLink.href) : '';
+  }
+  if (instagramUrl) {
+    var safeInstagramUrl = escapeAttr(instagramUrl);
+    return '<div class="article-embed is-instagram">'
+      + '<blockquote class="instagram-media" data-instgrm-permalink="' + safeInstagramUrl + '" data-instgrm-version="14"'
+      + ' style="background:#fff;border:0;border-radius:3px;margin:1px;max-width:540px;min-width:326px;padding:0;width:100%">'
+      + '<a href="' + safeInstagramUrl + '" target="_blank" rel="noopener">View this post on Instagram</a>'
+      + '</blockquote></div><p></p>';
+  }
+
+  return '';
+}
+
+function insertEmbedCode() {
+  var input = document.getElementById('embed-code-input');
+  var html = extractSafeEmbedHtml(input.value);
+  if (!html) {
+    alert('Paste a valid YouTube iframe, Twitter/X embed, or Instagram embed code.');
+    return;
+  }
+  closeModal('video-modal');
+  restoreAndInsert(html);
+  input.value = '';
+  setTimeout(function() {
+    if (window.twttr && window.twttr.widgets) window.twttr.widgets.load();
+    if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+  }, 100);
 }
 // Upload video from PC
 async function uploadInlineVideo(input) {

@@ -241,6 +241,10 @@
       min-height: 0 !important;
       height: auto !important;
     }
+    .article-body .article-embed.is-twitter:not(.is-fallback),
+    .article-body .article-embed.is-instagram:not(.is-fallback) {
+      min-height: 180px;
+    }
     .article-body .instagram-media,
     .article-body .twitter-tweet {
       margin-left: auto !important;
@@ -624,6 +628,25 @@
             return card;
           }
 
+          function loadExternalScript(id, src, onload) {
+            var existing = document.getElementById(id);
+            if (existing) {
+              if (onload) existing.addEventListener('load', onload, { once: true });
+              return;
+            }
+            var script = document.createElement('script');
+            script.id = id;
+            script.src = src;
+            script.async = true;
+            if (onload) script.onload = onload;
+            document.body.appendChild(script);
+          }
+
+          function processSocialEmbeds() {
+            if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(document.querySelector('.article-body'));
+            if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+          }
+
           function repairArticleEmbeds() {
             var body = document.querySelector('.article-body');
             if (!body) return;
@@ -677,8 +700,8 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
-              }, 3500);
+                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
+              }, 5000);
             });
 
             body.querySelectorAll('.article-embed.is-instagram, .embed-instagram').forEach(function(embed) {
@@ -690,8 +713,8 @@
               }
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
-              }, 3500);
+                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
+              }, 5000);
             });
 
             body.querySelectorAll('blockquote.twitter-tweet, blockquote.instagram-media').forEach(function(blockquote) {
@@ -706,13 +729,20 @@
               embed.appendChild(makeFallback(url, isTwitter ? 'X / Twitter post' : 'Instagram post'));
               setTimeout(function() {
                 var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height > 650) embed.classList.add('is-fallback');
-              }, 3500);
+                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
+              }, 5000);
             });
           }
 
           try {
             repairArticleEmbeds();
+            if (document.querySelector('.article-body .twitter-tweet')) {
+              loadExternalScript('twitter-widgets-js', 'https://platform.twitter.com/widgets.js', processSocialEmbeds);
+            }
+            if (document.querySelector('.article-body .instagram-media')) {
+              loadExternalScript('instagram-embed-js', 'https://www.instagram.com/embed.js', processSocialEmbeds);
+            }
+            setTimeout(processSocialEmbeds, 600);
           } catch (err) {
             console.warn('Embed repair failed', err);
           }
