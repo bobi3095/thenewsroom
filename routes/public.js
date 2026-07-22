@@ -27,23 +27,47 @@ const catMap = {
   'latest': 'latest'
 };
 
+const DEFAULT_FEED_WINDOW_DAYS = 30;
+
 // Helper: articles from last 24 hours
 function getLatest6hrs(articles) {
   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return articles.filter(a => new Date(a.createdAt) >= oneDayAgo);
 }
 
+function getArticleAgeHours(article) {
+  const createdAt = new Date(article.createdAt).getTime();
+  if (!Number.isFinite(createdAt)) return Number.POSITIVE_INFINITY;
+  return Math.max(0.25, (Date.now() - createdAt) / (60 * 60 * 1000));
+}
+
+function isInsideDefaultFeedWindow(article) {
+  return getArticleAgeHours(article) <= DEFAULT_FEED_WINDOW_DAYS * 24;
+}
+
 function scoreArticleForDiscovery(article, followedAuthorIds = new Set()) {
-  const ageHours = Math.max(0.25, (Date.now() - new Date(article.createdAt).getTime()) / (60 * 60 * 1000));
-  const freshnessScore = Math.max(0, 120 - ageHours * 3);
-  const engagementScore = Math.log1p(article.views || 0) * 8;
-  const followingBoost = followedAuthorIds.has(Number(article.authorId)) ? 55 : 0;
-  const featuredBoost = article.featured ? 18 : 0;
-  return freshnessScore + engagementScore + followingBoost + featuredBoost;
+  const ageHours = getArticleAgeHours(article);
+  const ageDays = ageHours / 24;
+  let freshnessScore = 0;
+
+  if (ageHours <= 6) freshnessScore = 420 - ageHours * 8;
+  else if (ageHours <= 24) freshnessScore = 360 - ageHours * 5;
+  else if (ageDays <= 3) freshnessScore = 260 - ageDays * 30;
+  else if (ageDays <= 7) freshnessScore = 190 - ageDays * 16;
+  else if (ageDays <= 14) freshnessScore = 100 - ageDays * 5;
+  else if (ageDays <= DEFAULT_FEED_WINDOW_DAYS) freshnessScore = 45 - ageDays;
+
+  const engagementScore = Math.min(55, Math.log1p(article.views || 0) * 7);
+  const followingBoost = followedAuthorIds.has(Number(article.authorId)) ? 45 : 0;
+  const verifiedBoost = article.authorVerified !== false ? 10 : 0;
+  const featuredBoost = article.featured && ageDays <= 7 ? 16 : 0;
+  return freshnessScore + engagementScore + followingBoost + verifiedBoost + featuredBoost;
 }
 
 function buildFairFeed(articles, followedAuthorIds = new Set()) {
-  const ranked = [...articles].sort((a, b) => {
+  const eligibleArticles = articles.filter(isInsideDefaultFeedWindow);
+  const sourceArticles = eligibleArticles.length ? eligibleArticles : articles;
+  const ranked = [...sourceArticles].sort((a, b) => {
     const scoreDiff = scoreArticleForDiscovery(b, followedAuthorIds) - scoreArticleForDiscovery(a, followedAuthorIds);
     if (scoreDiff !== 0) return scoreDiff;
     return new Date(b.createdAt) - new Date(a.createdAt);
