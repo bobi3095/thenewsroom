@@ -66,6 +66,7 @@ function scoreArticleForDiscovery(article, followedAuthorIds = new Set()) {
 
 function buildFairFeed(articles, followedAuthorIds = new Set()) {
   const eligibleArticles = articles.filter(isInsideDefaultFeedWindow);
+  const archiveArticles = articles.filter(article => !isInsideDefaultFeedWindow(article));
   const sourceArticles = eligibleArticles.length ? eligibleArticles : articles;
   const ranked = [...sourceArticles].sort((a, b) => {
     const scoreDiff = scoreArticleForDiscovery(b, followedAuthorIds) - scoreArticleForDiscovery(a, followedAuthorIds);
@@ -96,6 +97,11 @@ function buildFairFeed(articles, followedAuthorIds = new Set()) {
       const authorId = Number(picked.authorId);
       firstPageAuthorCount.set(authorId, (firstPageAuthorCount.get(authorId) || 0) + 1);
     }
+  }
+
+  if (eligibleArticles.length && archiveArticles.length) {
+    const archiveFeed = archiveArticles.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return feed.concat(archiveFeed);
   }
 
   return feed;
