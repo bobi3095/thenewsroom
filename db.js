@@ -202,6 +202,10 @@ async function initPostgres() {
   await pool.query('CREATE INDEX IF NOT EXISTS idx_article_comment_likes_comment_id ON article_comment_likes(comment_id)').catch(() => {});
   await pool.query('CREATE INDEX IF NOT EXISTS idx_journalist_applications_status_created ON journalist_applications(status, created_at DESC)').catch(() => {});
   await pool.query("CREATE UNIQUE INDEX IF NOT EXISTS journalist_applications_one_pending_per_user ON journalist_applications(public_user_id) WHERE status='pending'").catch(() => {});
+  await pool.query(`
+    ALTER TABLE notifications ADD COLUMN IF NOT EXISTS dedupe_key TEXT;
+  `).catch(() => {});
+  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS notifications_dedupe_key_unique ON notifications(dedupe_key) WHERE dedupe_key IS NOT NULL').catch(() => {});
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_public_user_created ON notifications(public_user_id, created_at DESC)').catch(() => {});
   await pool.query('CREATE INDEX IF NOT EXISTS idx_notifications_public_user_unread ON notifications(public_user_id) WHERE read_at IS NULL').catch(() => {});
 

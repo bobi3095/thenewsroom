@@ -49,9 +49,11 @@
     .article-page {
       background: #fbfaf7;
       padding-top: 48px;
+      overflow-x: hidden;
     }
-    .article-shell { max-width: 1220px; margin: 0 auto; padding: 0 24px; }
-    .article-layout { display: grid; grid-template-columns: minmax(0, 780px) 330px; gap: 34px; align-items: start; }
+    .article-shell { max-width: 1220px; margin: 0 auto; padding: 0 24px; overflow-x: clip; }
+    .article-layout { display: grid; grid-template-columns: minmax(0, 780px) 330px; gap: 34px; align-items: start; min-width: 0; }
+    .article-layout > article { min-width: 0; }
     .article-hero-card { margin-bottom: 16px; padding-bottom: 0; }
     .article-kicker-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
     .article-category-badge {
@@ -170,6 +172,14 @@
       border: 1px solid #dedbd4;
       margin-bottom: 10px;
       background: #e8e2d8;
+      overflow: hidden;
+      max-width: 100%;
+    }
+    .article-cover img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
     }
     .article-cover-caption {
       color: #777;
@@ -183,6 +193,7 @@
       font-family: var(--sans);
       font-size: 0.95rem;
       line-height: 1.72;
+      overflow-wrap: anywhere;
     }
     .article-body p { font-size: 0.95rem; line-height: 1.72; margin-bottom: 1.2em; }
     .article-body h2 {
@@ -206,6 +217,7 @@
       width: 100%;
       max-width: 680px;
       margin: 1.7em 0;
+      overflow: hidden;
     }
     .article-body .article-embed-frame {
       position: relative;
@@ -251,6 +263,7 @@
       margin-right: auto !important;
       max-width: 540px !important;
       width: 100% !important;
+      min-width: 0 !important;
     }
     .article-body .article-embed-fallback {
       display: none;
@@ -483,8 +496,23 @@
     }
     .mobile-sticky-actions { display: none; }
     @media (max-width: 900px) {
-      .article-shell { padding: 0 16px; }
-      .article-layout { display: block; }
+      html, body { width: 100%; max-width: 100%; overflow-x: hidden; }
+      .article-page { padding-top: 24px; }
+      .article-shell { padding: 0 10px; max-width: 100vw; overflow-x: hidden; }
+      .article-layout { display: block; width: 100%; max-width: 100%; overflow-x: hidden; }
+      .article-layout > article,
+      .article-hero-card,
+      .article-action-bar,
+      .journalist-card,
+      .trust-card,
+      .discussion-panel,
+      .article-cover,
+      .article-body {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+      }
       .article-author-row, .article-action-bar { align-items: flex-start; flex-direction: column; }
       .article-action-group { grid-template-columns: repeat(2, 1fr); width: 100%; }
       .article-action-btn { border-bottom: 1px solid #e5e2db; }
@@ -495,7 +523,10 @@
       .article-body p { font-size: 0.94rem; line-height: 1.68; }
       .article-body h2 { font-size: 1.14rem; }
       .article-body h3 { font-size: 1.04rem; }
-      .article-body .article-embed { max-width: 100%; }
+      .article-body .article-embed { max-width: 100%; overflow-x: hidden; }
+      .article-body .twitter-tweet,
+      .article-body .instagram-media { max-width: 100% !important; min-width: 0 !important; }
+      .article-body iframe { max-width: 100% !important; }
       .article-body .article-embed.is-instagram,
       .article-body .article-embed.is-twitter { display: block; }
       .mobile-sticky-actions {
@@ -608,146 +639,6 @@
         <div class="article-body">
           <%- article.content %>
         </div>
-
-        <script>
-        (function() {
-          function makeFallback(url, label) {
-            var safeUrl = url || '#';
-            var card = document.createElement('div');
-            card.className = 'article-embed-fallback';
-            card.innerHTML = ''
-              + '<div class="social-embed-header">'
-              + '<span class="social-embed-title">' + label + '</span>'
-              + '<a class="social-embed-link" href="' + safeUrl + '" target="_blank" rel="noopener">View profile</a>'
-              + '</div>'
-              + '<div class="social-embed-preview">'
-              + '<a class="social-embed-preview-link" href="' + safeUrl + '" target="_blank" rel="noopener">Open embedded post</a>'
-              + '<span class="social-embed-play" aria-hidden="true"></span>'
-              + '<span class="social-embed-note">Tap to watch this video/post</span>'
-              + '</div>';
-            return card;
-          }
-
-          function loadExternalScript(id, src, onload) {
-            var existing = document.getElementById(id);
-            if (existing) {
-              if (onload) existing.addEventListener('load', onload, { once: true });
-              return;
-            }
-            var script = document.createElement('script');
-            script.id = id;
-            script.src = src;
-            script.async = true;
-            if (onload) script.onload = onload;
-            document.body.appendChild(script);
-          }
-
-          function processSocialEmbeds() {
-            if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(document.querySelector('.article-body'));
-            if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
-          }
-
-          function repairArticleEmbeds() {
-            var body = document.querySelector('.article-body');
-            if (!body) return;
-
-            body.querySelectorAll('.article-embed-frame').forEach(function(frame) {
-              var iframe = frame.querySelector('iframe');
-              if (iframe) {
-                frame.classList.add('has-video');
-                return;
-              }
-
-              var text = frame.textContent.trim();
-              if (text) {
-                var parentEmbed = frame.closest('.article-embed');
-                var target = parentEmbed || frame;
-                var fragment = document.createDocumentFragment();
-                Array.from(frame.childNodes).forEach(function(node) {
-                  fragment.appendChild(node);
-                });
-                target.parentNode.insertBefore(fragment, target);
-                target.remove();
-                return;
-              }
-
-              frame.classList.add('is-broken');
-              var emptyParent = frame.closest('.article-embed');
-              if (emptyParent && !emptyParent.textContent.trim()) emptyParent.classList.add('is-broken');
-            });
-
-            body.querySelectorAll('iframe[src*="youtube.com/embed/"], iframe[src*="youtube-nocookie.com/embed/"]').forEach(function(iframe) {
-              var frame = iframe.closest('.article-embed-frame');
-              if (frame) {
-                frame.classList.add('has-video');
-                return;
-              }
-
-              var embed = document.createElement('div');
-              embed.className = 'article-embed is-youtube';
-              frame = document.createElement('div');
-              frame.className = 'article-embed-frame has-video';
-              iframe.parentNode.insertBefore(embed, iframe);
-              embed.appendChild(frame);
-              frame.appendChild(iframe);
-            });
-
-            body.querySelectorAll('.article-embed.is-twitter, .embed-twitter').forEach(function(embed) {
-              var link = embed.querySelector('blockquote a[href*="/status/"], a[href*="/status/"]');
-              var url = embed.getAttribute('data-url') || (link ? link.href : '');
-              if (!embed.querySelector('.article-embed-fallback')) {
-                embed.appendChild(makeFallback(url, 'X / Twitter post'));
-              }
-              setTimeout(function() {
-                var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
-              }, 5000);
-            });
-
-            body.querySelectorAll('.article-embed.is-instagram, .embed-instagram').forEach(function(embed) {
-              var blockquote = embed.querySelector('.instagram-media');
-              var link = embed.querySelector('a[href*="instagram.com"]');
-              var url = blockquote ? blockquote.getAttribute('data-instgrm-permalink') : (link ? link.href : '');
-              if (!embed.querySelector('.article-embed-fallback')) {
-                embed.appendChild(makeFallback(url, 'Instagram post'));
-              }
-              setTimeout(function() {
-                var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
-              }, 5000);
-            });
-
-            body.querySelectorAll('blockquote.twitter-tweet, blockquote.instagram-media').forEach(function(blockquote) {
-              if (blockquote.closest('.article-embed, .embed-twitter, .embed-instagram')) return;
-              var embed = document.createElement('div');
-              var isTwitter = blockquote.classList.contains('twitter-tweet');
-              embed.className = isTwitter ? 'article-embed is-twitter' : 'article-embed is-instagram';
-              blockquote.parentNode.insertBefore(embed, blockquote);
-              embed.appendChild(blockquote);
-              var link = blockquote.querySelector('a[href]');
-              var url = blockquote.getAttribute('data-instgrm-permalink') || (link ? link.href : '');
-              embed.appendChild(makeFallback(url, isTwitter ? 'X / Twitter post' : 'Instagram post'));
-              setTimeout(function() {
-                var frame = embed.querySelector('iframe');
-                if (!frame || frame.getBoundingClientRect().height < 40) embed.classList.add('is-fallback');
-              }, 5000);
-            });
-          }
-
-          try {
-            repairArticleEmbeds();
-            if (document.querySelector('.article-body .twitter-tweet')) {
-              loadExternalScript('twitter-widgets-js', 'https://platform.twitter.com/widgets.js', processSocialEmbeds);
-            }
-            if (document.querySelector('.article-body .instagram-media')) {
-              loadExternalScript('instagram-embed-js', 'https://www.instagram.com/embed.js', processSocialEmbeds);
-            }
-            setTimeout(processSocialEmbeds, 600);
-          } catch (err) {
-            console.warn('Embed repair failed', err);
-          }
-        })();
-        </script>
 
         <section class="journalist-card">
           <div class="journalist-card-top">
@@ -1002,7 +893,10 @@ if (copyBtn) copyBtn.addEventListener('click', function() {
 });
 
 function repairArticleEmbeds() {
-  document.querySelectorAll('.article-body .article-embed-frame').forEach(function(frame) {
+  const body = document.querySelector('.article-body');
+  if (!body) return;
+
+  body.querySelectorAll('.article-embed-frame').forEach(function(frame) {
     const iframe = frame.querySelector('iframe');
     if (iframe) {
       frame.classList.add('has-video');
@@ -1027,7 +921,7 @@ function repairArticleEmbeds() {
     if (parentEmbed && !parentEmbed.textContent.trim()) parentEmbed.classList.add('is-broken');
   });
 
-  document.querySelectorAll('.article-body iframe[src*="youtube.com/embed/"], .article-body iframe[src*="youtube-nocookie.com/embed/"]').forEach(function(iframe) {
+  body.querySelectorAll('iframe[src*="youtube.com/embed/"], iframe[src*="youtube-nocookie.com/embed/"]').forEach(function(iframe) {
     if (!iframe.closest('.article-embed-frame')) {
       const embed = document.createElement('div');
       embed.className = 'article-embed is-youtube';
@@ -1040,6 +934,39 @@ function repairArticleEmbeds() {
       iframe.closest('.article-embed-frame').classList.add('has-video');
     }
   });
+
+  body.querySelectorAll('.article-embed.is-twitter, .embed-twitter').forEach(function(embed) {
+    const link = embed.querySelector('blockquote a[href*="/status/"], a[href*="/status/"]');
+    const url = embed.getAttribute('data-url') || (link ? link.href : '');
+    if (url && !embed.querySelector('.article-embed-fallback')) {
+      embed.appendChild(makeSocialEmbedFallback(url, 'X / Twitter post'));
+    }
+  });
+
+  body.querySelectorAll('.article-embed.is-instagram, .embed-instagram').forEach(function(embed) {
+    const blockquote = embed.querySelector('.instagram-media');
+    const link = embed.querySelector('a[href*="instagram.com"]');
+    const url = blockquote ? blockquote.getAttribute('data-instgrm-permalink') : (link ? link.href : '');
+    if (url && !embed.querySelector('.article-embed-fallback')) {
+      embed.appendChild(makeSocialEmbedFallback(url, 'Instagram post'));
+    }
+  });
+}
+
+function makeSocialEmbedFallback(url, label) {
+  const card = document.createElement('div');
+  card.className = 'article-embed-fallback';
+  card.innerHTML = ''
+    + '<div class="social-embed-header">'
+    + '<span class="social-embed-title">' + label + '</span>'
+    + '<a class="social-embed-link" href="' + url + '" target="_blank" rel="noopener">View profile</a>'
+    + '</div>'
+    + '<div class="social-embed-preview">'
+    + '<a class="social-embed-preview-link" href="' + url + '" target="_blank" rel="noopener">Open embedded post</a>'
+    + '<span class="social-embed-play" aria-hidden="true"></span>'
+    + '<span class="social-embed-note">Tap to watch this video/post</span>'
+    + '</div>';
+  return card;
 }
 
 function loadExternalScriptOnce(src, id, onload) {
@@ -1058,23 +985,46 @@ function loadExternalScriptOnce(src, id, onload) {
 
 repairArticleEmbeds();
 
-if (document.querySelector('.twitter-tweet')) {
-  loadExternalScriptOnce('https://platform.twitter.com/widgets.js', 'twitter-widgets-script', function() {
-    if (window.twttr && window.twttr.widgets) {
-      window.twttr.widgets.load(document.querySelector('.article-body'));
-      setTimeout(function() { window.twttr.widgets.load(document.querySelector('.article-body')); }, 1200);
+function markLoadedSocialEmbeds() {
+  document.querySelectorAll('.article-body .article-embed.is-twitter, .article-body .article-embed.is-instagram, .article-body .embed-twitter, .article-body .embed-instagram').forEach(function(embed) {
+    const iframe = embed.querySelector('iframe');
+    if (iframe && iframe.getBoundingClientRect().height > 40) {
+      embed.classList.remove('is-fallback');
     }
   });
 }
 
-if (document.querySelector('.instagram-media')) {
-  loadExternalScriptOnce('https://www.instagram.com/embed.js', 'instagram-embed-script', function() {
-    if (window.instgrm && window.instgrm.Embeds) {
-      window.instgrm.Embeds.process();
-      setTimeout(function() { window.instgrm.Embeds.process(); }, 1200);
+function processSocialEmbeds() {
+  if (window.twttr && window.twttr.widgets) window.twttr.widgets.load(document.querySelector('.article-body'));
+  if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+  setTimeout(markLoadedSocialEmbeds, 300);
+}
+
+function showSocialFallbacksIfNeeded() {
+  document.querySelectorAll('.article-body .article-embed.is-twitter, .article-body .article-embed.is-instagram, .article-body .embed-twitter, .article-body .embed-instagram').forEach(function(embed) {
+    const iframe = embed.querySelector('iframe');
+    if (!iframe || iframe.getBoundingClientRect().height < 40) {
+      embed.classList.add('is-fallback');
     }
   });
 }
+
+if (document.querySelector('.article-body .twitter-tweet')) {
+  loadExternalScriptOnce('https://platform.twitter.com/widgets.js', 'twitter-widgets-script', function() {
+    processSocialEmbeds();
+  });
+}
+
+if (document.querySelector('.article-body .instagram-media')) {
+  loadExternalScriptOnce('https://www.instagram.com/embed.js', 'instagram-embed-script', function() {
+    processSocialEmbeds();
+  });
+}
+
+[250, 900, 1800, 3500, 6500].forEach(function(delay) {
+  setTimeout(processSocialEmbeds, delay);
+});
+setTimeout(showSocialFallbacksIfNeeded, 12000);
 </script>
 </body>
 </html>
