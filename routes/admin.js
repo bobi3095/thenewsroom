@@ -21,6 +21,20 @@ const cleanProfileUrl = value => {
   return url;
 };
 
+async function buildUniqueArticleSlug(title, currentArticleId = null) {
+  const baseSlug = slugify(title) || 'article';
+  const currentId = currentArticleId ? Number(currentArticleId) : null;
+  let candidate = baseSlug;
+  let suffix = 2;
+
+  while (true) {
+    const existing = await db.getArticle({ slug: candidate });
+    if (!existing || (currentId && Number(existing.id) === currentId)) return candidate;
+    candidate = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+}
+
 // ── AUTH ──────────────────────────────────────────────────────────
 router.get('/login', (req, res) => {
   const token = req.cookies?.token;
@@ -119,6 +133,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
     if (id) {
       const existing = await db.getArticle({ id: parseInt(id) });
       if (req.user.role !== 'admin' && existing?.authorId !== req.user.id) return res.redirect('/admin');
+      const articleSlug = await buildUniqueArticleSlug(title, parseInt(id));
       // Delete old image if new one uploaded OR user clicked Remove
       if ((imageUrl || removeImage === '1') && existing?.image) {
         await deleteFile(existing.image);
@@ -129,7 +144,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         categories: validCategories,
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
-        slug: slugify(title),
+        slug: articleSlug,
         image: removeImage === '1' ? '' : (imageUrl || existing?.image || ''),
         coverHeight,
         coverFit,
@@ -145,7 +160,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         categories: validCategories,
         status: status || 'draft',
         featured: req.user.role === 'admin' ? featured === 'on' : false,
-        slug: slugify(title),
+        slug: await buildUniqueArticleSlug(title),
         author: req.user.name,
         authorId: req.user.id,
         image: imageUrl || '',

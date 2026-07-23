@@ -818,7 +818,7 @@
       <a href="/login" class="mobile-action-btn secondary">Like</a>
     <% } %>
     <a href="#discussion" class="mobile-action-btn secondary">Comment</a>
-    <button type="button" class="mobile-action-btn secondary" onclick="document.getElementById('share-btn').click()">Share</button>
+    <button type="button" id="mobile-share-btn" class="mobile-action-btn secondary">Share</button>
     <a href="/journalist/<%= article.authorId %>" class="mobile-action-btn">Follow</a>
   </div>
 </main>
@@ -844,6 +844,7 @@ const twLink = document.getElementById('tw-link');
 const tgLink = document.getElementById('tg-link');
 const shareBtn = document.getElementById('share-btn');
 const sharePanel = document.getElementById('share-panel');
+const mobileShareBtn = document.getElementById('mobile-share-btn');
 const copyBtn = document.getElementById('copy-btn');
 const copyText = document.getElementById('copy-text');
 
@@ -866,6 +867,49 @@ if (shareBtn && sharePanel) {
   });
 }
 
+function copyArticleLink() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(pageUrl);
+  }
+  return new Promise(function(resolve, reject) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = pageUrl;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+if (mobileShareBtn) {
+  mobileShareBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    trackArticleMetric('share');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: pageTitle, text: pageTitle, url: pageUrl });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+    copyArticleLink().then(function() {
+      const oldText = mobileShareBtn.textContent;
+      mobileShareBtn.textContent = 'Copied';
+      setTimeout(function() { mobileShareBtn.textContent = oldText; }, 1600);
+    });
+  });
+}
+
 document.addEventListener('click', function(e) {
   if (!sharePanel || !shareBtn) return;
   if (!sharePanel.contains(e.target) && !shareBtn.contains(e.target)) sharePanel.classList.remove('open');
@@ -873,18 +917,7 @@ document.addEventListener('click', function(e) {
 
 if (copyBtn) copyBtn.addEventListener('click', function() {
   trackArticleMetric('share');
-  navigator.clipboard.writeText(pageUrl).then(function() {
-    if (copyText) copyText.textContent = 'Copied!';
-    setTimeout(function() {
-      if (copyText) copyText.textContent = 'Copy Link';
-    }, 2000);
-  }).catch(function() {
-    const ta = document.createElement('textarea');
-    ta.value = pageUrl;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+  copyArticleLink().then(function() {
     if (copyText) copyText.textContent = 'Copied!';
     setTimeout(function() {
       if (copyText) copyText.textContent = 'Copy Link';
