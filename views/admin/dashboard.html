@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — The News Room Admin</title>
   <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    .success-modal-backdrop { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center; background: rgba(15,15,15,0.38); padding: 18px; }
+    .success-modal { width: min(420px, 100%); position: relative; border-radius: 18px; background: #fff; padding: 42px 30px 28px; text-align: center; box-shadow: 0 22px 70px rgba(0,0,0,0.22); }
+    .success-close { position: absolute; top: 14px; right: 16px; border: 0; background: transparent; color: #999; font-size: 2rem; line-height: 1; cursor: pointer; }
+    .success-icon { width: 112px; height: 112px; margin: 0 auto 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 4.6rem; font-weight: 900; background: linear-gradient(180deg, #6ee000, #00bd4c); box-shadow: 0 0 0 24px rgba(42,214,82,0.12); }
+    .success-modal h2 { margin: 0 0 12px; color: #111827; font-size: 2.2rem; font-weight: 900; }
+    .success-modal p { margin: 0 auto 26px; max-width: 300px; color: #6b7280; font-size: 1.05rem; line-height: 1.45; }
+    .success-done { width: 100%; border: 0; border-radius: 12px; background: linear-gradient(135deg, #5a96ff, #1767ff); color: white; padding: 15px 20px; font-size: 1.25rem; font-weight: 900; cursor: pointer; }
+  </style>
 </head>
 <body>
 <div class="admin-layout">
@@ -129,5 +138,25 @@
     </div>
   </div>
 </div>
+<% if (publishedSuccess) { %>
+<div class="success-modal-backdrop" id="publish-success-modal">
+  <div class="success-modal" role="dialog" aria-modal="true" aria-labelledby="publish-success-title">
+    <button class="success-close" type="button" onclick="closePublishSuccess()" aria-label="Close">&times;</button>
+    <div class="success-icon">&#10003;</div>
+    <h2 id="publish-success-title">Success!</h2>
+    <p>Your article has been published successfully.</p>
+    <button class="success-done" type="button" onclick="closePublishSuccess()">Done</button>
+  </div>
+</div>
+<script>
+function closePublishSuccess() {
+  var modal = document.getElementById('publish-success-modal');
+  if (modal) modal.remove();
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, document.title, '/admin');
+  }
+}
+</script>
+<% } %>
 </body>
 </html>

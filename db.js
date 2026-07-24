@@ -720,14 +720,31 @@ const db = {
       dedupeKey: data.dedupeKey ? String(data.dedupeKey).trim() : null
     };
     if (isPostgres) {
-      const { rows } = await pool.query(
-        `INSERT INTO notifications (public_user_id,type,title,body,url,dedupe_key)
-         VALUES ($1,$2,$3,$4,$5,$6)
-         ON CONFLICT (dedupe_key) DO NOTHING
-         RETURNING *`,
-        [payload.publicUserId, payload.type, payload.title, payload.body, payload.url, payload.dedupeKey]
-      );
-      return rows[0] ? pgToNotification(rows[0]) : null;
+      if (payload.dedupeKey) {
+        const existing = await pool.query(
+          'SELECT * FROM notifications WHERE dedupe_key=$1 LIMIT 1',
+          [payload.dedupeKey]
+        );
+        if (existing.rows[0]) return pgToNotification(existing.rows[0]);
+      }
+      try {
+        const { rows } = await pool.query(
+          `INSERT INTO notifications (public_user_id,type,title,body,url,dedupe_key)
+           VALUES ($1,$2,$3,$4,$5,$6)
+           RETURNING *`,
+          [payload.publicUserId, payload.type, payload.title, payload.body, payload.url, payload.dedupeKey]
+        );
+        return rows[0] ? pgToNotification(rows[0]) : null;
+      } catch (err) {
+        if (payload.dedupeKey && err?.code === '23505') {
+          const existing = await pool.query(
+            'SELECT * FROM notifications WHERE dedupe_key=$1 LIMIT 1',
+            [payload.dedupeKey]
+          );
+          if (existing.rows[0]) return pgToNotification(existing.rows[0]);
+        }
+        throw err;
+      }
     }
     const lowdb = getLowdb();
     lowdb.data.notifications ||= [];

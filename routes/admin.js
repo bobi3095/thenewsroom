@@ -21,6 +21,14 @@ const cleanProfileUrl = value => {
   return url;
 };
 
+async function notifyFollowersSafely(article) {
+  try {
+    await db.notifyFollowersOfArticle(article);
+  } catch (err) {
+    console.error('Article published, but follower notification failed:', err);
+  }
+}
+
 async function buildUniqueArticleSlug(title, currentArticleId = null) {
   const baseSlug = slugify(title) || 'article';
   const currentId = currentArticleId ? Number(currentArticleId) : null;
@@ -78,7 +86,8 @@ router.get('/', authMiddleware, async (req, res) => {
       videos: myVideos,
       stats,
       categories: db.categories,
-      cacheStats: getCacheStats()
+      cacheStats: getCacheStats(),
+      publishedSuccess: req.query.published === '1'
     });
   }
 
@@ -92,7 +101,8 @@ router.get('/', authMiddleware, async (req, res) => {
     articles: allArticles.slice(0, 20),
     videos: allVideos.slice(0, 20),
     stats: { total: allArticles.length, published, drafts, videos: allVideos.length, totalViews, authors: allUsers.filter(u => u.role === 'author').length },
-    categories: db.categories
+    categories: db.categories,
+    publishedSuccess: req.query.published === '1'
   });
 });
 
@@ -151,8 +161,10 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         coverPosition
       });
       if (existing?.status !== 'published' && updatedArticle?.status === 'published') {
-        await db.notifyFollowersOfArticle(updatedArticle);
+        await notifyFollowersSafely(updatedArticle);
       }
+      clearCache(); // Clear all cache so updated article appears immediately
+      return res.redirect('/admin' + (updatedArticle?.status === 'published' ? '?published=1' : ''));
     } else {
       const createdArticle = await db.createArticle({
         title: title.trim(), content: cleanContent, excerpt,
@@ -169,11 +181,11 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         coverPosition
       });
       if (createdArticle?.status === 'published') {
-        await db.notifyFollowersOfArticle(createdArticle);
+        await notifyFollowersSafely(createdArticle);
       }
+      clearCache(); // Clear all cache so new article appears immediately
+      return res.redirect('/admin' + (createdArticle?.status === 'published' ? '?published=1' : ''));
     }
-    clearCache(); // Clear all cache so new article appears immediately
-    res.redirect('/admin');
   } catch(err) {
     console.error('Save article error:', err);
     res.status(500).send('Error saving article: ' + err.message);
