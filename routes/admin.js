@@ -20,6 +20,29 @@ const cleanProfileUrl = value => {
   if (!/^https?:\/\//i.test(url)) return 'https://' + url;
   return url;
 };
+const asArray = value => Array.isArray(value) ? value : (value ? [value] : []);
+const isAllowedDocumentUrl = value => {
+  try {
+    const url = new URL(cleanProfileUrl(value));
+    return ['drive.google.com', 'docs.google.com'].includes(url.hostname.replace(/^www\./, ''));
+  } catch {
+    return false;
+  }
+};
+const parseArticleDocuments = body => {
+  const titles = asArray(body.documentTitles);
+  const urls = asArray(body.documentUrls);
+  const notes = asArray(body.documentNotes);
+
+  return urls.map((url, index) => {
+    const cleanUrl = cleanProfileUrl(url);
+    return {
+      title: cleanText(titles[index]) || `Document ${index + 1}`,
+      url: cleanUrl,
+      note: cleanText(notes[index])
+    };
+  }).filter(doc => doc.url && isAllowedDocumentUrl(doc.url)).slice(0, 12);
+};
 
 async function notifyFollowersSafely(article) {
   try {
@@ -130,6 +153,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
       'left bottom', 'center bottom', 'right bottom'
     ]);
     const coverPosition = validCoverPositions.has(req.body.coverPosition) ? req.body.coverPosition : 'center center';
+    const documents = parseArticleDocuments(req.body);
     if (!title || title.trim().length < 3) return res.status(400).send('Article title is required');
     // Handle multiple categories - comes as array or single value
     const rawCats = req.body.categories;
@@ -156,6 +180,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         featured: req.user.role === 'admin' ? featured === 'on' : existing.featured,
         slug: articleSlug,
         image: removeImage === '1' ? '' : (imageUrl || existing?.image || ''),
+        documents,
         coverHeight,
         coverFit,
         coverPosition
@@ -176,6 +201,7 @@ router.post('/articles/save', authMiddleware, upload.single('image'), csrfProtec
         author: req.user.name,
         authorId: req.user.id,
         image: imageUrl || '',
+        documents,
         coverHeight,
         coverFit,
         coverPosition

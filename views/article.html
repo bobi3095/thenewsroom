@@ -213,6 +213,30 @@
     }
     .article-body li { font-size: 0.95rem; line-height: 1.68; }
     .article-body blockquote { border-left-width: 4px; padding: 18px 22px; background: #faf7f4; }
+    .article-documents {
+      max-width: 680px;
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #dedbd4;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .article-documents h2 {
+      font-family: var(--serif);
+      font-size: 1.15rem;
+      margin: 0 0 14px;
+      color: #111;
+    }
+    .article-document-card {
+      display: grid;
+      gap: 5px;
+      padding: 14px 0;
+      border-top: 1px solid #eee9e1;
+    }
+    .article-document-card:first-of-type { border-top: 0; padding-top: 0; }
+    .article-document-card strong { font-size: 0.92rem; color: #111; }
+    .article-document-card p { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.5; }
+    .article-document-card a { color: var(--accent); font-size: 0.74rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; }
     .article-body .article-embed {
       width: 100%;
       max-width: 680px;
@@ -639,6 +663,19 @@
         <div class="article-body">
           <%- article.content %>
         </div>
+
+        <% if (article.documents && article.documents.length) { %>
+        <section class="article-documents">
+          <h2>Source Documents</h2>
+          <% article.documents.forEach(doc => { %>
+            <div class="article-document-card">
+              <strong><%= doc.title || 'Document' %></strong>
+              <% if (doc.note) { %><p><%= doc.note %></p><% } %>
+              <a href="<%= doc.url %>" target="_blank" rel="noopener noreferrer">Open document</a>
+            </div>
+          <% }) %>
+        </section>
+        <% } %>
 
         <section class="journalist-card">
           <div class="journalist-card-top">

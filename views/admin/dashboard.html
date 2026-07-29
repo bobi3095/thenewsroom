@@ -72,8 +72,39 @@
         </div>
       </div>
 
+      <div class="quick-actions-grid" aria-label="Admin quick actions">
+        <a class="quick-action-card" href="/admin/articles/new">
+          <div>
+            <div class="quick-action-kicker">Create</div>
+            <div class="quick-action-title">Write Article</div>
+            <div class="quick-action-copy">Open the editor with categories, cover image, embeds, and documents.</div>
+          </div>
+        </a>
+        <a class="quick-action-card" href="#articles-list">
+          <div>
+            <div class="quick-action-kicker">Manage</div>
+            <div class="quick-action-title">All Articles</div>
+            <div class="quick-action-copy">Edit drafts, review published stories, or open live articles.</div>
+          </div>
+        </a>
+        <a class="quick-action-card" href="/admin/comments">
+          <div>
+            <div class="quick-action-kicker">Community</div>
+            <div class="quick-action-title">Comments</div>
+            <div class="quick-action-copy">Moderate reader comments from one place.</div>
+          </div>
+        </a>
+        <a class="quick-action-card" href="/admin/journalist-applications">
+          <div>
+            <div class="quick-action-kicker">Team</div>
+            <div class="quick-action-title">Applications</div>
+            <div class="quick-action-copy">Review people applying to publish as journalists.</div>
+          </div>
+        </a>
+      </div>
+
       <!-- Articles Table -->
-      <div class="admin-card">
+      <div class="admin-card" id="articles-list">
         <div class="admin-card-header">
           <div class="admin-card-title">All Articles</div>
           <a href="/admin/articles/new" class="btn btn-primary btn-sm">+ Write New</a>

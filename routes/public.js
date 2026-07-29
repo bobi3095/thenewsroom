@@ -340,20 +340,105 @@ router.post('/article/:slug/comments/:commentId/like', requirePublicUser, csrfPr
   }
 });
 
+function stripHtml(value) {
+  return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeSearchValue(value) {
+  return stripHtml(value).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function levenshtein(a, b) {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i += 1) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const temp = row[j];
+      row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+      previous = temp;
+    }
+  }
+  return row[b.length];
+}
+
+function tokenMatches(queryToken, textTokens) {
+  if (!queryToken) return false;
+  return textTokens.some(token => {
+    if (token === queryToken || token.startsWith(queryToken)) return true;
+    if (queryToken.length <= 3) return false;
+    const distance = levenshtein(queryToken, token);
+    return distance <= (queryToken.length <= 5 ? 1 : 2);
+  });
+}
+
+function scoreArticleSearch(article, queryTokens, phrase) {
+  const title = normalizeSearchValue(article.title);
+  const excerpt = normalizeSearchValue(article.excerpt);
+  const content = normalizeSearchValue(article.content);
+  const author = normalizeSearchValue(article.author);
+  const categories = normalizeSearchValue([article.category, ...(article.categories || [])].join(' '));
+  const documents = normalizeSearchValue((article.documents || []).map(doc => `${doc.title || ''} ${doc.note || ''}`).join(' '));
+  const allTokens = [title, excerpt, content, author, categories, documents].join(' ').split(' ').filter(Boolean);
+  let score = 0;
+
+  if (phrase && title.includes(phrase)) score += 90;
+  if (phrase && categories.includes(phrase)) score += 50;
+  if (phrase && author.includes(phrase)) score += 45;
+  if (phrase && excerpt.includes(phrase)) score += 35;
+  if (phrase && content.includes(phrase)) score += 22;
+
+  queryTokens.forEach(token => {
+    if (tokenMatches(token, title.split(' ').filter(Boolean))) score += 38;
+    if (tokenMatches(token, categories.split(' ').filter(Boolean))) score += 30;
+    if (tokenMatches(token, author.split(' ').filter(Boolean))) score += 28;
+    if (tokenMatches(token, excerpt.split(' ').filter(Boolean))) score += 16;
+    if (tokenMatches(token, content.split(' ').filter(Boolean))) score += 9;
+    if (tokenMatches(token, documents.split(' ').filter(Boolean))) score += 8;
+    if (!tokenMatches(token, allTokens)) score -= 12;
+  });
+
+  return score;
+}
+
 // Search
 router.get('/search', async (req, res) => {
   try {
-    const q = (req.query.q || '').toLowerCase();
+    const q = String(req.query.q || '').trim();
+    const selectedCategory = String(req.query.category || '').trim();
+    const selectedAuthor = String(req.query.author || '').trim();
+    const searchSort = ['relevance', 'newest', 'views'].includes(req.query.sort) ? req.query.sort : 'relevance';
     const all = await db.getArticles({ status: 'published' });
-    const results = q ? all.filter(a =>
-      a.title?.toLowerCase().includes(q) ||
-      a.excerpt?.toLowerCase().includes(q) ||
-      a.content?.toLowerCase().includes(q) ||
-      a.category?.toLowerCase().includes(q) ||
-      (Array.isArray(a.categories) && a.categories.some(c => c.toLowerCase().includes(q)))
-    ) : [];
+    const authors = [...new Set(all.map(a => a.author).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const normalizedPhrase = normalizeSearchValue(q);
+    const queryTokens = normalizedPhrase.split(' ').filter(Boolean);
+    let results = q ? all.map(article => ({
+      ...article,
+      searchScore: scoreArticleSearch(article, queryTokens, normalizedPhrase)
+    })).filter(article => article.searchScore > 0) : (selectedCategory || selectedAuthor ? [...all] : []);
+
+    if (selectedCategory) {
+      results = results.filter(article => article.category === selectedCategory || (article.categories || []).includes(selectedCategory));
+    }
+    if (selectedAuthor) {
+      results = results.filter(article => article.author === selectedAuthor);
+    }
+
+    results.sort((a, b) => {
+      if (searchSort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (searchSort === 'views') return (b.views || 0) - (a.views || 0);
+      return (b.searchScore || 0) - (a.searchScore || 0) || new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     res.render('search', {
       results, q,
+      selectedCategory,
+      selectedAuthor,
+      searchSort,
+      authors,
       categories: ALL_CATEGORIES,
       navCategories: NAV_CATEGORIES,
       moreCategories: MORE_CATEGORIES,

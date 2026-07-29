@@ -227,6 +227,51 @@ input, textarea, select { font-family: var(--sans); }
   color: var(--ink);
 }
 
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.quick-action-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  padding: 16px;
+  min-height: 118px;
+  display: grid;
+  align-content: space-between;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.quick-action-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+}
+
+.quick-action-kicker {
+  font-size: 0.62rem;
+  color: var(--accent);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+}
+
+.quick-action-title {
+  font-size: 0.92rem;
+  color: var(--ink);
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.quick-action-copy {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
 /* ── TABLE ── */
 .admin-table {
   width: 100%;
@@ -622,4 +667,9 @@ textarea.form-control { resize: vertical; min-height: 80px; line-height: 1.6; }
   .admin-main { margin-left: 60px; }
   .editor-layout { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .quick-actions-grid { grid-template-columns: 1fr; }
 }

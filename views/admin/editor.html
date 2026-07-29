@@ -58,6 +58,10 @@
     .cover-controls select, .cover-controls input[type="range"] { width:100%; }
     .cover-size-row { display:flex; align-items:center; gap:8px; }
     .cover-size-row span { min-width:46px; font-size:0.72rem; color:var(--ink); text-align:right; }
+    .document-link-row { display:grid; gap:7px; padding:10px; border:1px solid var(--border); background:#fafafa; margin-bottom:10px; }
+    .document-link-row input, .document-link-row textarea { font-size:0.76rem; }
+    .document-row-actions { display:flex; justify-content:flex-end; }
+    .document-row-actions button { border:1px solid #fca5a5; background:#fff; color:var(--danger); padding:4px 8px; font-size:0.68rem; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -189,6 +193,33 @@
                   <span class="toggle-slider"></span>
                 </label>
               </div>
+            </div>
+
+            <!-- Supporting Documents -->
+            <div class="panel-section">
+              <div class="panel-title">Documents</div>
+              <p style="font-size:0.68rem;color:var(--muted);margin-bottom:10px;line-height:1.5">Add Google Drive or Google Docs links connected to this story.</p>
+              <div id="document-links-list">
+                <% const articleDocuments = article && Array.isArray(article.documents) ? article.documents : []; %>
+                <% if (articleDocuments.length) { %>
+                  <% articleDocuments.forEach((doc, index) => { %>
+                    <div class="document-link-row">
+                      <input class="form-control" type="text" name="documentTitles" value="<%= doc.title || '' %>" placeholder="Document title">
+                      <input class="form-control" type="url" name="documentUrls" value="<%= doc.url || '' %>" placeholder="https://docs.google.com/...">
+                      <textarea class="form-control" name="documentNotes" rows="2" placeholder="Short note"><%= doc.note || '' %></textarea>
+                      <div class="document-row-actions"><button type="button" onclick="removeDocumentRow(this)">Remove</button></div>
+                    </div>
+                  <% }) %>
+                <% } else { %>
+                  <div class="document-link-row">
+                    <input class="form-control" type="text" name="documentTitles" placeholder="Document title">
+                    <input class="form-control" type="url" name="documentUrls" placeholder="https://docs.google.com/...">
+                    <textarea class="form-control" name="documentNotes" rows="2" placeholder="Short note"></textarea>
+                    <div class="document-row-actions"><button type="button" onclick="removeDocumentRow(this)">Remove</button></div>
+                  </div>
+                <% } %>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" style="width:100%;justify-content:center" onclick="addDocumentRow()">+ Add Document Link</button>
             </div>
 
             <!-- Cover Image -->
@@ -497,6 +528,30 @@ function removeCurrentImage() {
   const flag = document.getElementById('remove-image-flag');
   if (wrap) wrap.style.display = 'none';
   if (flag) flag.value = '1';
+}
+
+function addDocumentRow() {
+  const list = document.getElementById('document-links-list');
+  if (!list || list.children.length >= 12) return;
+  const row = document.createElement('div');
+  row.className = 'document-link-row';
+  row.innerHTML = ''
+    + '<input class="form-control" type="text" name="documentTitles" placeholder="Document title">'
+    + '<input class="form-control" type="url" name="documentUrls" placeholder="https://docs.google.com/...">'
+    + '<textarea class="form-control" name="documentNotes" rows="2" placeholder="Short note"></textarea>'
+    + '<div class="document-row-actions"><button type="button" onclick="removeDocumentRow(this)">Remove</button></div>';
+  list.appendChild(row);
+}
+
+function removeDocumentRow(button) {
+  const list = document.getElementById('document-links-list');
+  const row = button.closest('.document-link-row');
+  if (!list || !row) return;
+  if (list.children.length === 1) {
+    row.querySelectorAll('input, textarea').forEach(input => input.value = '');
+    return;
+  }
+  row.remove();
 }
 
 </script>

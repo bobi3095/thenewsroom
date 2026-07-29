@@ -7,6 +7,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Search — The News Room</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .search-filters {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    .search-filter-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .search-filter-row select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 11px 12px;
+      color: var(--ink);
+      font-size: 0.84rem;
+    }
+    @media (max-width: 720px) {
+      .search-filters,
+      .search-filter-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
 
@@ -17,17 +42,44 @@
     <div class="container">
       <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted);margin-bottom:12px">Search</div>
       <form action="/search" method="GET">
-        <input type="text" name="q" value="<%= q %>" placeholder="Search for stories, topics..." autofocus>
-        <button type="submit">Search</button>
+        <div class="search-filters">
+          <input type="text" name="q" value="<%= q %>" placeholder="Search title, article body, category, author..." autofocus>
+          <button type="submit">Search</button>
+        </div>
+        <div class="search-filter-row">
+          <select name="category" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <% categories.forEach(cat => { %>
+              <option value="<%= cat %>" <%= selectedCategory === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+          </select>
+          <select name="author" aria-label="Filter by author">
+            <option value="">All authors</option>
+            <% authors.forEach(author => { %>
+              <option value="<%= author %>" <%= selectedAuthor === author ? 'selected' : '' %>><%= author %></option>
+            <% }) %>
+          </select>
+          <select name="sort" aria-label="Sort results">
+            <option value="relevance" <%= searchSort === 'relevance' ? 'selected' : '' %>>Sort by relevance</option>
+            <option value="newest" <%= searchSort === 'newest' ? 'selected' : '' %>>Sort by newest</option>
+            <option value="views" <%= searchSort === 'views' ? 'selected' : '' %>>Sort by views</option>
+          </select>
+        </div>
       </form>
     </div>
   </div>
 
   <div class="container">
-    <% if (q) { %>
+    <% if (q || selectedCategory || selectedAuthor) { %>
       <div style="margin-bottom:24px">
         <span style="font-size:0.9rem;color:var(--muted)">
+          <% if (q) { %>
           <strong style="color:var(--ink)"><%= results.length %></strong> result<%= results.length !== 1 ? 's' : '' %> for "<strong style="color:var(--ink)"><%= q %></strong>"
+          <% } else { %>
+          Showing <strong style="color:var(--ink)"><%= results.length %></strong> filtered result<%= results.length !== 1 ? 's' : '' %>
+          <% } %>
+          <% if (selectedCategory) { %> in <strong style="color:var(--ink)"><%= selectedCategory %></strong><% } %>
+          <% if (selectedAuthor) { %> by <strong style="color:var(--ink)"><%= selectedAuthor %></strong><% } %>
         </span>
       </div>
 
@@ -46,7 +98,7 @@
             <div class="list-category"><%= a.category %></div>
             <div class="list-title"><%= a.title %></div>
             <% if (a.excerpt) { %><p style="font-size:0.82rem;color:#888;margin-top:4px"><%= a.excerpt.substring(0,140) %>...</p><% } %>
-            <div class="list-meta"><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %></div>
+            <div class="list-meta"><%= a.author ? a.author + ' - ' : '' %><%= new Date(a.createdAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'}) %><%= a.views ? ' - ' + a.views + ' views' : '' %></div>
           </div>
         </a>
         <% }) %>
